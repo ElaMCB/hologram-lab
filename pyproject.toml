@@ -51,7 +51,8 @@ dev = [
 holo-sim = "hologram_lab.cli:main"
 
 [tool.setuptools]
-packages = ["hologram_lab"]
+packages = {find = {}}
+package-dir = {"" = "."}
 
 [tool.black]
 line-length = 100
