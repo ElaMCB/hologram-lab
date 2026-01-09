@@ -1,5 +1,11 @@
 # Hologram Lab
 
+[![Live Interactive Hologram](https://img.shields.io/badge/🌐_Live_Interactive_Hologram-View_Now-00ffff?style=for-the-badge&logo=github)](https://elamcb.github.io/hologram-lab/)
+
+**[👉 View Interactive Hologram Simulation](https://elamcb.github.io/hologram-lab/)** - Experience the live WebGL hologram effect
+
+---
+
 A comprehensive repository covering real hologram creation, hands-on demos, resources, and a GitHub Pages hologram simulation.
 
 ![Hologram Simulation](demos/hologram-preview.gif)
