@@ -2,16 +2,19 @@
 
 def test_hologram_imports():
     """Test that required modules can be imported."""
+    # Test core dependencies that must be available
+    import numpy as np
+    from scipy.fft import fft2
+    assert np is not None
+    assert fft2 is not None
+    
+    # Test optional dependencies (matplotlib may not be installed in all environments)
     try:
-        import numpy as np
         import matplotlib.pyplot as plt
-        from scipy.fft import fft2
-        # If we get here, imports succeeded
-        assert True
-    except ImportError as e:
-        # Mark test as skipped if optional dependencies are missing
-        import pytest
-        pytest.skip(f"Optional dependencies not available: {e}")
+        assert plt is not None
+    except ImportError:
+        # matplotlib is optional for basic functionality
+        pass
 
 def test_object_generation():
     """Test that object images can be generated."""
