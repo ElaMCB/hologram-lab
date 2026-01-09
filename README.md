@@ -184,6 +184,14 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 - Add unit tests
 - Convert resources to table format (in progress)
 
+## Call to Action
+
+- **Star us** if you learned something new
+- **Open an issue** with `#help-my-hologram-is-blurry` if you need help
+- **PR welcome** — see [good-first-issue](https://github.com/ElaMCB/hologram-lab/labels/good%20first%20issue) for ideas
+
 ## Contact
 
 For questions, suggestions, or collaboration opportunities, please open an issue or reach out through the repository discussions.
+
+</details>
