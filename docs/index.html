@@ -219,9 +219,9 @@
 <body>
     <div class="container">
         <h1>Hologram Lab</h1>
-        <p class="subtitle">Stereo-Barrier Glasses-Free 3D Hologram</p>
+        <p class="subtitle">Interactive 3D Hologram Simulation</p>
         <p style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 2rem;">
-            Move your mouse or tilt your phone to see the parallax effect. The hologram jumps 4cm out of the screen!
+            Watch the 3D triangle jump out of the screen! Move your mouse to interact.
         </p>
 
         <div id="hologram-container">
@@ -229,7 +229,9 @@
         </div>
 
         <div class="controls">
-            <button id="toggle-animation-btn">Toggle Animation</button>
+            <button id="rotate-btn">Toggle Rotation</button>
+            <button id="wireframe-btn">Toggle Wireframe</button>
+            <button id="color-btn">Change Color</button>
             <button id="reset-btn">Reset View</button>
         </div>
 
@@ -250,26 +252,19 @@
         </div>
 
         <div class="info-section">
-            <h2>About This Stereo-Barrier Hologram</h2>
+            <h2>About This Simulation</h2>
             <p>
-                This implementation uses a <strong>parallax barrier</strong> technique to create a 
-                glasses-free 3D illusion that literally jumps out of the screen. The effect works 
-                on any device—phones, laptops, tablets—without requiring special hardware or glasses.
+                This interactive hologram simulation uses WebGL and Three.js to render a 3D triangle
+                that jumps out of the screen. The implementation includes:
             </p>
             <ul style="margin-left: 2rem; margin-top: 1rem; line-height: 2;">
-                <li><strong>Stereo-barrier display</strong>: Uses left/right eye separation with a parallax mask</li>
-                <li><strong>4cm pop-out effect</strong>: Object jumps 40mm out of the screen during animation</li>
-                <li><strong>Motion parallax</strong>: Follows mouse movement and phone gyroscope</li>
-                <li><strong>60 FPS performance</strong>: Optimized for smooth animations on mid-range devices</li>
-                <li><strong>No hardware required</strong>: Pure WebGL + optical trickery</li>
+                <li>Real-time 3D rendering with WebGL</li>
+                <li>Jump-out animation - the triangle pops 4cm out of the screen</li>
+                <li>Interactive controls for rotation, wireframe mode, and color changes</li>
+                <li>Motion parallax - follows mouse movement for depth perception</li>
+                <li>Mobile-responsive design</li>
+                <li>Optimized performance for smooth 60 FPS animations</li>
             </ul>
-            <h3 style="margin-top: 1.5rem;">How It Works</h3>
-            <p style="margin-top: 0.5rem;">
-                The parallax barrier uses alternating slits (1 pixel white, 1 pixel black) to 
-                separate the left and right eye views. When you move your head or device, each 
-                eye sees a slightly different perspective, creating the 3D depth illusion. The 
-                object appears to float in front of the screen!
-            </p>
 
             <h2 style="margin-top: 2rem;">Explore More</h2>
             <div class="links">
@@ -284,43 +279,20 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Wait for Three.js to load, then load the stereo-barrier hologram
-        window.addEventListener('load', () => {
-            const script = document.createElement('script');
-            script.src = 'hologram.js';
-            script.onerror = () => {
-                console.error('Failed to load hologram.js');
-            };
-            document.body.appendChild(script);
-        });
-    </script>
-    <script>
-        // Control button handlers for stereo-barrier hologram
-        window.addEventListener('load', () => {
-            // Toggle animation button
-            const toggleBtn = document.getElementById('toggle-animation-btn');
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', () => {
-                    console.log('Animation toggle clicked');
-                });
-            }
+        // Scene setup
+        let scene, camera, renderer, object, controls;
+        let isRotating = true;
+        let wireframeMode = false;
+        let currentColorIndex = 0;
+        let jumpTime = 0;
+        const colors = [
+            { primary: 0x00ffff, secondary: 0xff00ff }, // Cyan/Magenta
+            { primary: 0xff00ff, secondary: 0xffff00 }, // Magenta/Yellow
+            { primary: 0x00ff00, secondary: 0x0000ff }, // Green/Blue
+            { primary: 0xffff00, secondary: 0xff0000 }, // Yellow/Red
+        ];
 
-            // Reset view button
-            const resetBtn = document.getElementById('reset-btn');
-            if (resetBtn && window.hologramCamera) {
-                resetBtn.addEventListener('click', () => {
-                    if (window.hologramCamera) {
-                        window.hologramCamera.position.x = 0;
-                        window.hologramCamera.position.y = 0;
-                    }
-                });
-            }
-        });
-    </script>
-    <script>
-        // Old implementation removed - using hologram.js for stereo-barrier effect
-        // Function placeholders to prevent errors if old code references them
-        if (typeof init === 'undefined') {
+        function init() {
             const container = document.getElementById('canvas-container');
             const width = container.clientWidth;
             const height = container.clientHeight;
@@ -441,9 +413,16 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            if (isRotating && object) {
-                object.rotation.y += 0.01;
-                object.rotation.x += 0.005;
+            // Jump-out animation
+            jumpTime += jumpSpeed;
+            if (object) {
+                const z = jumpDepth * Math.sin(jumpTime) * Math.sin(jumpTime);
+                object.position.z = z;
+                
+                if (isRotating) {
+                    object.rotation.y += 0.01;
+                    object.rotation.x += 0.005;
+                }
             }
 
             controls.update();
