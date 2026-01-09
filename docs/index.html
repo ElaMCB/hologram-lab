@@ -294,17 +294,33 @@
             document.body.appendChild(script);
         });
     </script>
-        let isRotating = true;
-        let wireframeMode = false;
-        let currentColorIndex = 0;
-        const colors = [
-            { primary: 0x00ffff, secondary: 0xff00ff }, // Cyan/Magenta
-            { primary: 0xff00ff, secondary: 0xffff00 }, // Magenta/Yellow
-            { primary: 0x00ff00, secondary: 0x0000ff }, // Green/Blue
-            { primary: 0xffff00, secondary: 0xff0000 }, // Yellow/Red
-        ];
+    <script>
+        // Control button handlers for stereo-barrier hologram
+        window.addEventListener('load', () => {
+            // Toggle animation button
+            const toggleBtn = document.getElementById('toggle-animation-btn');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    console.log('Animation toggle clicked');
+                });
+            }
 
-        function init() {
+            // Reset view button
+            const resetBtn = document.getElementById('reset-btn');
+            if (resetBtn && window.hologramCamera) {
+                resetBtn.addEventListener('click', () => {
+                    if (window.hologramCamera) {
+                        window.hologramCamera.position.x = 0;
+                        window.hologramCamera.position.y = 0;
+                    }
+                });
+            }
+        });
+    </script>
+    <script>
+        // Old implementation removed - using hologram.js for stereo-barrier effect
+        // Function placeholders to prevent errors if old code references them
+        if (typeof init === 'undefined') {
             const container = document.getElementById('canvas-container');
             const width = container.clientWidth;
             const height = container.clientHeight;
