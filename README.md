@@ -109,7 +109,7 @@ Explore CGH algorithms in `/simulations`:
 
 ## Interactive Web Hologram
 
-Visit the [GitHub Pages site](https://yourusername.github.io/hologram-lab) to see the interactive hologram effect in action. The implementation includes:
+Visit the [GitHub Pages site](https://elamcb.github.io/hologram-lab) to see the interactive hologram effect in action. The implementation includes:
 - Real-time 3D rendering with WebGL
 - Mobile-responsive Pepper's Ghost effect
 - Smooth animations and interactions
@@ -135,14 +135,6 @@ Visit the [GitHub Pages site](https://yourusername.github.io/hologram-lab) to se
 - LitiHolo DIY kits - No-chemical hologram creation
 - Spatial Light Modulators (SLMs) - Digital hologram projection
 - INTEGRAF supplies - Professional holography materials
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. Areas where contributions are especially appreciated:
-- Additional hologram tutorials and guides
-- New CGH algorithms and implementations
-- Improvements to the web-based hologram simulation
-- Documentation and examples
 
 ## License
 
