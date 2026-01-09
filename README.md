@@ -4,6 +4,8 @@
 
 **[View Interactive Hologram Simulation](https://elamcb.github.io/hologram-lab/)** - Experience the live WebGL hologram effect
 
+**Need help?** Is your hologram blurry? Open an issue with the `help-wanted` label or check [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ---
 
 A comprehensive repository covering real hologram creation, hands-on demos, resources, and a GitHub Pages hologram simulation.
@@ -49,35 +51,47 @@ Short videos or GIFs of:
 
 ## Quick Start
 
-### Local Setup
+Get up and running in 5 minutes:
 
-#### Using Docker (Recommended)
+```bash
+# Clone the repository
+git clone https://github.com/ElaMCB/hologram-lab.git
+cd hologram-lab
+
+# Install dependencies (recommended: use a virtual environment)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Or install as a package
+pip install -e .
+
+# Launch Jupyter to explore simulations
+jupyter notebook simulations/
+
+# Try the Fourier hologram demo
+python simulations/fourier_hologram_demo.py
+```
+
+### Alternative: Docker
 
 ```bash
 docker build -t hologram-lab .
 docker run -p 8080:8080 hologram-lab
 ```
 
-Then visit `http://localhost:8080` to see the hologram simulation.
+Visit `http://localhost:8080` to see the hologram simulation.
 
-#### Using Python
+### Using Git Submodules (CGH Library)
 
-1. Install dependencies:
+To include the Computer-Generated-Hologram library as a submodule:
+
 ```bash
-pip install -r requirements.txt
+git submodule add https://github.com/JackHCC/Computer-Generated-Hologram.git cgh-lib
+git submodule update --init --recursive
 ```
 
-2. Run simulations:
-```bash
-cd simulations
-jupyter notebook
-```
-
-3. View GitHub Pages hologram locally:
-```bash
-cd github-page-hologram
-python -m http.server 8000
-```
+This keeps upstream updates one command away: `git submodule update --remote cgh-lib`
 
 ## Getting Started with Real Holograms
 
@@ -140,6 +154,40 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - MIT OpenCourseWare for educational materials
 - INTEGRAF for professional holography resources
 - The holography community for inspiration and knowledge sharing
+
+## Topics
+
+This repository covers: `hologram`, `computer-generated-holography`, `cgh`, `slm`, `spatial-light-modulator`, `optics`, `holography`, `python`, `jupyter`, `webgl`, `threejs`, `fourier-optics`, `computational-optics`, `optical-physics`
+
+To help with discoverability, add these topics to your repository settings on GitHub.
+
+## CLI Usage
+
+Install the package and use the command-line interface:
+
+```bash
+pip install -e .
+
+# Generate a Fresnel hologram from an image
+holo-sim --method fresnel --image input.png --z 0.05 --out output.png
+
+# Generate a Fourier hologram
+holo-sim --method fourier --image input.png --out output.png
+
+# See all options
+holo-sim --help
+```
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+**Good first issues:**
+- Look for issues labeled `good-first-issue`
+- Add more example holograms
+- Improve documentation
+- Add unit tests
+- Convert resources to table format (in progress)
 
 ## Contact
 
