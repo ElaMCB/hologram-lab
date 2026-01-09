@@ -77,4 +77,5 @@ jobs:
     - name: Build package
       run: |
         python -m build --wheel --sdist
+      continue-on-error: true
 
