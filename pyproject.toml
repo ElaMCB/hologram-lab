@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
-    {name = "ElaMereanu", email = ""}
+    {name = "ElaMereanu"}
 ]
 keywords = ["hologram", "computer-generated-holography", "cgh", "slm", "optics", "holography"]
 classifiers = [
@@ -51,10 +51,10 @@ dev = [
 holo-sim = "hologram_lab.cli:main"
 
 [tool.setuptools]
-packages = ["hologram_lab"]
+packages = {find = {}}
 
-[tool.setuptools.package-data]
-hologram_lab = ["py.typed"]
+[tool.setuptools.package-dir]
+"" = "."
 
 [tool.black]
 line-length = 100
