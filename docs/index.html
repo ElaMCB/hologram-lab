@@ -315,12 +315,14 @@
             controls = {
                 update: function() {},
                 reset: function() {
-                    camera.position.set(0, 0, 5);
+                    if (camera) camera.position.set(0, 0, 5);
                 }
             };
             
             // Set up mouse controls after renderer is created
-            setupMouseControls();
+            if (renderer && renderer.domElement) {
+                setupMouseControls();
+            }
             
             // Try OrbitControls if available (optional)
             if (window.OrbitControlsLoaded && typeof THREE.OrbitControls !== 'undefined') {
