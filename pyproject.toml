@@ -51,8 +51,10 @@ dev = [
 holo-sim = "hologram_lab.cli:main"
 
 [tool.setuptools]
-packages = {find = {}}
-package-dir = {"" = "."}
+packages = ["hologram_lab"]
+
+[tool.setuptools.package-data]
+hologram_lab = ["py.typed"]
 
 [tool.black]
 line-length = 100
