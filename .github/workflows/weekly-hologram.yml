@@ -1,0 +1,41 @@
+name: Weekly Hologram Generation
+
+on:
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  generate-hologram:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Generate hologram simulation
+      run: |
+        chmod +x .github/scripts/generate_weekly_hologram.py
+        python .github/scripts/generate_weekly_hologram.py
+        
+    - name: Commit and push generated hologram
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add demos/weekly-hologram-*.gif
+        git diff --staged --quiet || git commit -m "Auto-generated weekly hologram simulation [skip ci]"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
