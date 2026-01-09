@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="hologramGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ffff;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ff00ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00ffff;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="hologramRadial" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#00ffff;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#ff00ff;stop-opacity:0.3" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#hologramRadial)" opacity="0.9"/>
+  
+  <!-- Holographic interference pattern (concentric circles) -->
+  <circle cx="50" cy="50" r="40" fill="none" stroke="url(#hologramGradient)" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="50" cy="50" r="32" fill="none" stroke="url(#hologramGradient)" stroke-width="1" opacity="0.5"/>
+  <circle cx="50" cy="50" r="24" fill="none" stroke="url(#hologramGradient)" stroke-width="1" opacity="0.4"/>
+  <circle cx="50" cy="50" r="16" fill="none" stroke="url(#hologramGradient)" stroke-width="0.8" opacity="0.5"/>
+  
+  <!-- Central holographic pattern (geometric shape representing 3D) -->
+  <polygon points="50,20 65,35 50,50 35,35" fill="url(#hologramGradient)" opacity="0.8"/>
+  <polygon points="50,80 65,65 50,50 35,65" fill="url(#hologramGradient)" opacity="0.8"/>
+  <polygon points="35,35 50,50 35,65 20,50" fill="url(#hologramGradient)" opacity="0.7"/>
+  <polygon points="65,35 80,50 65,65 50,50" fill="url(#hologramGradient)" opacity="0.7"/>
+  
+  <!-- Highlight effect -->
+  <circle cx="40" cy="40" r="8" fill="#ffffff" opacity="0.3"/>
+</svg>
+
