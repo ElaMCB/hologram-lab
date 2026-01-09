@@ -474,50 +474,66 @@
             renderer.setSize(width, height);
         }
 
-        // Control buttons
-        document.getElementById('rotate-btn').addEventListener('click', () => {
-            isRotating = !isRotating;
-        });
-
-        document.getElementById('wireframe-btn').addEventListener('click', () => {
-            wireframeMode = !wireframeMode;
-            if (object) {
-                object.material.wireframe = wireframeMode;
-            }
-        });
-
-        document.getElementById('color-btn').addEventListener('click', () => {
-            currentColorIndex = (currentColorIndex + 1) % colors.length;
-            if (object) {
-                object.material.color.setHex(colors[currentColorIndex].primary);
-                object.material.emissive.setHex(colors[currentColorIndex].primary);
-            }
-            
-            // Update lights
-            scene.children.forEach(child => {
-                if (child instanceof THREE.PointLight) {
-                    child.color.setHex(
-                        child.position.x > 0 
-                            ? colors[currentColorIndex].primary 
-                            : colors[currentColorIndex].secondary
-                    );
-                }
-            });
-        });
-
-        document.getElementById('reset-btn').addEventListener('click', () => {
-            if (object) {
-                object.rotation.set(0, 0, 0);
-            }
-            camera.position.set(0, 0, 5);
-            controls.reset();
-        });
-
         // Initialize after page loads and scripts are ready
         window.addEventListener('load', () => {
             // Wait a bit for OrbitControls to potentially load
             setTimeout(() => {
                 init();
+                
+                // Control buttons - register after init
+                const rotateBtn = document.getElementById('rotate-btn');
+                if (rotateBtn) {
+                    rotateBtn.addEventListener('click', () => {
+                        isRotating = !isRotating;
+                    });
+                }
+
+                const wireframeBtn = document.getElementById('wireframe-btn');
+                if (wireframeBtn) {
+                    wireframeBtn.addEventListener('click', () => {
+                        wireframeMode = !wireframeMode;
+                        if (object) {
+                            object.material.wireframe = wireframeMode;
+                        }
+                    });
+                }
+
+                const colorBtn = document.getElementById('color-btn');
+                if (colorBtn) {
+                    colorBtn.addEventListener('click', () => {
+                        currentColorIndex = (currentColorIndex + 1) % colors.length;
+                        if (object) {
+                            object.material.color.setHex(colors[currentColorIndex].primary);
+                            object.material.emissive.setHex(colors[currentColorIndex].primary);
+                        }
+                        
+                        // Update lights
+                        scene.children.forEach(child => {
+                            if (child instanceof THREE.PointLight) {
+                                child.color.setHex(
+                                    child.position.x > 0 
+                                        ? colors[currentColorIndex].primary 
+                                        : colors[currentColorIndex].secondary
+                                );
+                            }
+                        });
+                    });
+                }
+
+                const resetBtn = document.getElementById('reset-btn');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', () => {
+                        if (object) {
+                            object.rotation.set(0, 0, 0);
+                        }
+                        if (camera) {
+                            camera.position.set(0, 0, 5);
+                        }
+                        if (controls && controls.reset) {
+                            controls.reset();
+                        }
+                    });
+                }
             }, 100);
         });
     </script>
