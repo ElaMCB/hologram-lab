@@ -311,8 +311,18 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Controls - use OrbitControls if available, otherwise fallback
-            setupMouseControls(); // Always set up fallback first
+            // Controls - simple fallback (no OrbitControls needed)
+            controls = {
+                update: function() {},
+                reset: function() {
+                    camera.position.set(0, 0, 5);
+                }
+            };
+            
+            // Set up mouse controls after renderer is created
+            setupMouseControls();
+            
+            // Try OrbitControls if available (optional)
             if (window.OrbitControlsLoaded && typeof THREE.OrbitControls !== 'undefined') {
                 try {
                     controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -412,6 +422,8 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            
+            if (!renderer || !scene || !camera) return;
 
             // Jump-out animation
             jumpTime += jumpSpeed;
@@ -425,11 +437,15 @@
                 }
             }
 
-            controls.update();
+            if (controls && controls.update) {
+                controls.update();
+            }
             renderer.render(scene, camera);
         }
 
         function setupMouseControls() {
+            if (!renderer || !renderer.domElement) return;
+            
             // Simple mouse drag rotation
             let isDragging = false;
             let previousMousePosition = { x: 0, y: 0 };
