@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Hologram</title>
+    <style>
+        body { margin: 0; background: #000; }
+        #container { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        console.log('Three.js loaded:', typeof THREE);
+        
+        const container = document.getElementById('container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x0a0a0a);
+        container.appendChild(renderer.domElement);
+        
+        // Create triangle (octahedron)
+        const geometry = new THREE.OctahedronGeometry(1, 0);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0x00ffff,
+            emissive: 0x00ffff,
+            emissiveIntensity: 0.3
+        });
+        const triangle = new THREE.Mesh(geometry, material);
+        scene.add(triangle);
+        
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0x00ffff, 1, 100);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+        
+        camera.position.z = 5;
+        
+        let jumpTime = 0;
+        const jumpDepth = 0.04;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            jumpTime += 0.02;
+            const z = jumpDepth * Math.sin(jumpTime) * Math.sin(jumpTime);
+            triangle.position.z = z;
+            triangle.rotation.y += 0.01;
+            renderer.render(scene, camera);
+        }
+        animate();
+        console.log('Animation started');
+    </script>
+</body>
+</html>
+
