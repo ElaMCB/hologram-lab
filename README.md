@@ -1,8 +1,8 @@
 # Hologram Lab
 
-[![Live Interactive Hologram](https://img.shields.io/badge/🌐_Live_Interactive_Hologram-View_Now-00ffff?style=for-the-badge&logo=github)](https://elamcb.github.io/hologram-lab/)
+[![Live Interactive Hologram](https://img.shields.io/badge/Live_Interactive_Hologram-View_Now-00ffff?style=for-the-badge&logo=github)](https://elamcb.github.io/hologram-lab/)
 
-**[👉 View Interactive Hologram Simulation](https://elamcb.github.io/hologram-lab/)** - Experience the live WebGL hologram effect
+**[View Interactive Hologram Simulation](https://elamcb.github.io/hologram-lab/)** - Experience the live WebGL hologram effect
 
 ---
 
