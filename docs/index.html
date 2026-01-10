@@ -280,12 +280,14 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Scene setup
+        // Scene setup - simplified working version
         let scene, camera, renderer, object, controls;
         let isRotating = true;
         let wireframeMode = false;
         let currentColorIndex = 0;
         let jumpTime = 0;
+        const jumpSpeed = 0.02;
+        const jumpDepth = 0.04;
         const colors = [
             { primary: 0x00ffff, secondary: 0xff00ff }, // Cyan/Magenta
             { primary: 0xff00ff, secondary: 0xffff00 }, // Magenta/Yellow
@@ -302,22 +304,15 @@
             
             const width = container.clientWidth || window.innerWidth;
             const height = container.clientHeight || window.innerHeight;
-            
-            console.log('Container found:', container, 'Size:', width, 'x', height);
 
             // Scene
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0a0a0a);
-            
-            console.log('Scene created:', scene);
 
             // Camera
             camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
             camera.position.set(0, 0, 5);
-            camera.lookAt(0, 0, 0); // Look at origin where triangle is
-            console.log('Camera position:', camera.position);
-            camera.lookAt(0, 0, 0); // Look at origin where triangle is
-            console.log('Camera position:', camera.position);
+            camera.lookAt(0, 0, 0);
 
             // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -325,50 +320,34 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setClearColor(0x0a0a0a, 1);
             container.appendChild(renderer.domElement);
-            
-            console.log('Renderer created, canvas added to container');
 
-            // Controls - simple fallback (no OrbitControls needed)
+            // Controls
             controls = {
                 update: function() {},
                 reset: function() {
                     if (camera) camera.position.set(0, 0, 5);
+                    if (object) object.rotation.set(0, 0, 0);
                 }
             };
             
-            // Set up mouse controls after renderer is created
-            if (renderer && renderer.domElement) {
-                setupMouseControls();
-            }
-            
-            // Try OrbitControls if available (optional)
-            if (window.OrbitControlsLoaded && typeof THREE.OrbitControls !== 'undefined') {
-                try {
-                    controls = new THREE.OrbitControls(camera, renderer.domElement);
-                    controls.enableDamping = true;
-                    controls.dampingFactor = 0.05;
-                    controls.minDistance = 3;
-                    controls.maxDistance = 10;
-                } catch (e) {
-                    console.warn('OrbitControls initialization failed, using fallback');
-                    controls = {
-                        update: function() {},
-                        reset: function() {
-                            camera.position.set(0, 0, 5);
-                        }
-                    };
-                }
-            } else {
-                controls = {
-                    update: function() {},
-                    reset: function() {
-                        camera.position.set(0, 0, 5);
-                    }
-                };
-            }
+            // Set up mouse controls
+            setupMouseControls();
 
-            // Create hologram object (geometric shape)
-            createHologramObject();
+            // Create hologram object
+            const geometry = new THREE.OctahedronGeometry(1, 0);
+            const material = new THREE.MeshPhongMaterial({
+                color: colors[currentColorIndex].primary,
+                emissive: colors[currentColorIndex].primary,
+                emissiveIntensity: 0.3,
+                transparent: true,
+                opacity: 0.9,
+                wireframe: wireframeMode,
+                side: THREE.DoubleSide,
+            });
+
+            object = new THREE.Mesh(geometry, material);
+            object.position.set(0, 0, 0);
+            scene.add(object);
 
             // Lighting
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -389,34 +368,7 @@
             window.addEventListener('resize', onWindowResize);
 
             // Start animation
-            console.log('Starting animation...');
-            console.log('Scene has', scene.children.length, 'children');
             animate();
-        }
-
-        function createHologramObject() {
-            const geometry = new THREE.OctahedronGeometry(1, 0);
-            const material = new THREE.MeshPhongMaterial({
-                color: colors[currentColorIndex].primary,
-                emissive: colors[currentColorIndex].primary,
-                emissiveIntensity: 0.3,
-                transparent: true,
-                opacity: 0.8,
-                wireframe: wireframeMode,
-                side: THREE.DoubleSide,
-            });
-
-            object = new THREE.Mesh(geometry, material);
-            object.position.set(0, 0, 0); // Start at origin
-            object.scale.set(1, 1, 1); // Ensure proper scale
-            object.visible = true; // Ensure visible
-            scene.add(object);
-            
-            console.log('Triangle created:', object);
-            console.log('Triangle position:', object.position);
-            console.log('Triangle visible:', object.visible);
-            console.log('Triangle scale:', object.scale);
-            console.log('Scene children:', scene.children.length);
         }
 
         function addHolographicParticles() {
@@ -453,23 +405,16 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            if (!renderer || !scene || !camera) {
-                console.error('Missing renderer, scene, or camera in animate');
-                return;
-            }
+            if (!renderer || !scene || !camera || !object) return;
 
             // Jump-out animation
             jumpTime += jumpSpeed;
-            if (object && object.position) {
-                const z = jumpDepth * Math.sin(jumpTime) * Math.sin(jumpTime);
-                object.position.z = z; // Positive z moves towards camera
-                
-                if (isRotating) {
-                    object.rotation.y += 0.01;
-                    object.rotation.x += 0.005;
-                }
-            } else {
-                console.warn('Object not found in animate');
+            const z = jumpDepth * Math.sin(jumpTime) * Math.sin(jumpTime);
+            object.position.z = z;
+            
+            if (isRotating) {
+                object.rotation.y += 0.01;
+                object.rotation.x += 0.005;
             }
 
             if (controls && controls.update) {
