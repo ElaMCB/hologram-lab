@@ -453,23 +453,29 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            if (!renderer || !scene || !camera) return;
+            if (!renderer || !scene || !camera) {
+                console.error('Missing renderer, scene, or camera in animate');
+                return;
+            }
 
             // Jump-out animation
             jumpTime += jumpSpeed;
-            if (object) {
+            if (object && object.position) {
                 const z = jumpDepth * Math.sin(jumpTime) * Math.sin(jumpTime);
-                object.position.z = z;
+                object.position.z = z; // Positive z moves towards camera
                 
                 if (isRotating) {
                     object.rotation.y += 0.01;
                     object.rotation.x += 0.005;
                 }
+            } else {
+                console.warn('Object not found in animate');
             }
 
             if (controls && controls.update) {
                 controls.update();
             }
+            
             renderer.render(scene, camera);
         }
 
