@@ -116,7 +116,7 @@ Visit the [GitHub Pages site](https://elamcb.github.io/hologram-lab) to see the 
 - Real-time 3D rendering with WebGL
 - Mobile-responsive Pepper's Ghost effect
 - Smooth animations and interactions
-- **Dark mode support** — the page respects your OS dark mode preference
+- **Dark mode support** — page respects OS dark-mode (toggle yours to see the pyramid glow)
 
 ## Resources
 
