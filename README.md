@@ -1,29 +1,25 @@
 # Hologram Lab
 
 <p align="center">
-  <img src="demos/holo-pop.gif" width="420" alt="Hologram pops 4 cm out of screen"/><br>
+  <img src="demos/holo-pop-4cm.gif" width="420" alt="Hologram pops 4 cm out of screen"/><br>
   <strong><a href="https://elamcb.github.io/hologram-lab/">See it jump out of your screen — live demo</a></strong>
 </p>
 
 <p align="center">
-  <a href="https://elamcb.github.io/hologram-lab/"><img src="https://img.shields.io/badge/hologram-3D%20jump--out-00ffff?style=for-the-badge&logoColor=ff00ff" alt="Hologram Lab"></a>
   <a href="https://github.com/ElaMCB/hologram-lab/actions"><img src="https://img.shields.io/github/actions/workflow/status/ElaMCB/hologram-lab/ci.yml?branch=main" alt="CI Status"></a>
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue" alt="Python Version"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.9%2B-blue" alt="Python Version"></a>
+  <a href="https://elamcb.github.io/hologram-lab/"><img src="https://img.shields.io/badge/illusion-4_cm_popout-00ffff?logo=webgl&labelColor=000" alt="Holo Effect"></a>
   <a href="https://github.com/ElaMCB/hologram-lab/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 </p>
 
 **30-second start:**
 
 ```bash
-# Install
 pip install git+https://github.com/ElaMCB/hologram-lab
-
-# Generate a hologram
-holo-sim --method fresnel --image input.png --z 0.05 --out output.png
-
-# Or try the live WebGL demo
-open https://elamcb.github.io/hologram-lab/
+holo-sim -m fresnel -i my.png -z 0.05 -o out.png
 ```
+
+Or try the [live WebGL demo](https://elamcb.github.io/hologram-lab/) — page respects OS dark-mode (toggle yours to see the pyramid glow).
 
 <details>
 <summary>Full tour (click to expand)</summary>
@@ -188,8 +184,12 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## Call to Action
 
 - **Star us** if you learned something new
-- **Open an issue** with `#help-my-hologram-is-blurry` if you need help
+- **Get help** — [Discord server](https://discord.gg/YOUR_INVITE) `#help-my-hologram-is-blurry` (coming soon)
 - **PR welcome** — see [good-first-issue](https://github.com/ElaMCB/hologram-lab/labels/good%20first%20issue) for ideas
+
+<p align="center">
+  <a href="https://discord.gg/YOUR_INVITE"><img src="https://img.shields.io/discord/123456789?color=7289da&logo=discord&label=help-my-hologram-is-blurry" alt="Discord"></a>
+</p>
 
 ## Contact
 

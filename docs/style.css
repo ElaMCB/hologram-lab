@@ -19,5 +19,14 @@
     .info-section {
         background: rgba(255, 255, 255, 0.02);
     }
+    
+    details summary {
+        color: #00ffff;
+    }
+    
+    details[open] {
+        background: #0d1117;
+        border: 1px solid rgba(0, 255, 255, 0.3);
+    }
 }
 
