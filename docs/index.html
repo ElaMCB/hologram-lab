@@ -430,10 +430,13 @@
             // Simple mouse drag rotation
             let isDragging = false;
             let previousMousePosition = { x: 0, y: 0 };
+            let previousTouchDistance = 0;
             
+            // Mouse events (desktop)
             renderer.domElement.addEventListener('mousedown', (e) => {
                 isDragging = true;
                 previousMousePosition = { x: e.clientX, y: e.clientY };
+                e.preventDefault();
             });
             
             renderer.domElement.addEventListener('mousemove', (e) => {
@@ -452,13 +455,114 @@
                 isDragging = false;
             });
             
+            renderer.domElement.addEventListener('mouseleave', () => {
+                isDragging = false;
+            });
+            
+            // Touch events (mobile)
+            renderer.domElement.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    // Single touch - rotation
+                    isDragging = true;
+                    previousMousePosition = { 
+                        x: e.touches[0].clientX, 
+                        y: e.touches[0].clientY 
+                    };
+                } else if (e.touches.length === 2) {
+                    // Two touches - pinch to zoom
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    previousTouchDistance = Math.hypot(
+                        touch2.clientX - touch1.clientX,
+                        touch2.clientY - touch1.clientY
+                    );
+                }
+            }, { passive: false });
+            
+            renderer.domElement.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1 && isDragging && object) {
+                    // Single touch - rotation
+                    const deltaX = e.touches[0].clientX - previousMousePosition.x;
+                    const deltaY = e.touches[0].clientY - previousMousePosition.y;
+                    
+                    object.rotation.y += deltaX * 0.01;
+                    object.rotation.x += deltaY * 0.01;
+                    
+                    previousMousePosition = { 
+                        x: e.touches[0].clientX, 
+                        y: e.touches[0].clientY 
+                    };
+                } else if (e.touches.length === 2) {
+                    // Two touches - pinch to zoom
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    const currentDistance = Math.hypot(
+                        touch2.clientX - touch1.clientX,
+                        touch2.clientY - touch1.clientY
+                    );
+                    
+                    if (previousTouchDistance > 0) {
+                        const zoomDelta = (previousTouchDistance - currentDistance) * 0.01;
+                        camera.position.z += zoomDelta;
+                        camera.position.z = Math.max(3, Math.min(10, camera.position.z));
+                    }
+                    previousTouchDistance = currentDistance;
+                }
+            }, { passive: false });
+            
+            renderer.domElement.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 0) {
+                    isDragging = false;
+                    previousTouchDistance = 0;
+                } else if (e.touches.length === 1) {
+                    previousTouchDistance = 0;
+                }
+            }, { passive: false });
+            
             // Zoom with mouse wheel
             renderer.domElement.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const zoomSpeed = 0.1;
                 camera.position.z += e.deltaY * zoomSpeed;
                 camera.position.z = Math.max(3, Math.min(10, camera.position.z));
-            });
+            }, { passive: false });
+            
+            // Device orientation (gyroscope) for mobile
+            if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ requires permission
+                const orientationBtn = document.createElement('button');
+                orientationBtn.textContent = 'Enable Gyro';
+                orientationBtn.style.cssText = 'position:fixed;bottom:10px;right:10px;padding:10px;z-index:1000;';
+                orientationBtn.onclick = () => {
+                    DeviceOrientationEvent.requestPermission()
+                        .then(response => {
+                            if (response === 'granted') {
+                                setupDeviceOrientation();
+                                orientationBtn.remove();
+                            }
+                        });
+                };
+                document.body.appendChild(orientationBtn);
+            } else if (window.DeviceOrientationEvent) {
+                // Android and older iOS
+                setupDeviceOrientation();
+            }
+        }
+        
+        function setupDeviceOrientation() {
+            window.addEventListener('deviceorientation', (e) => {
+                if (e.gamma !== null && e.beta !== null && object) {
+                    // Convert device orientation to object rotation
+                    const gamma = THREE.MathUtils.degToRad(e.gamma) * 0.5;
+                    const beta = THREE.MathUtils.degToRad(e.beta) * 0.3;
+                    
+                    object.rotation.y = gamma;
+                    object.rotation.x = beta;
+                }
+            }, { passive: true });
         }
 
         function onWindowResize() {
