@@ -295,8 +295,15 @@
 
         function init() {
             const container = document.getElementById('canvas-container');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
+            if (!container) {
+                console.error('Canvas container not found!');
+                return;
+            }
+            
+            const width = container.clientWidth || window.innerWidth;
+            const height = container.clientHeight || window.innerHeight;
+            
+            console.log('Container found:', container, 'Size:', width, 'x', height);
 
             // Scene
             scene = new THREE.Scene();
@@ -378,6 +385,8 @@
             window.addEventListener('resize', onWindowResize);
 
             // Start animation
+            console.log('Starting animation...');
+            console.log('Scene has', scene.children.length, 'children');
             animate();
         }
 
@@ -500,8 +509,17 @@
 
         // Initialize after page loads and scripts are ready
         window.addEventListener('load', () => {
+            console.log('Page loaded, Three.js available:', typeof THREE !== 'undefined');
+            
+            // Wait for Three.js to be available
+            if (typeof THREE === 'undefined') {
+                console.error('Three.js not loaded!');
+                return;
+            }
+            
             // Wait a bit for OrbitControls to potentially load
             setTimeout(() => {
+                console.log('Initializing...');
                 init();
                 
                 // Control buttons - register after init
