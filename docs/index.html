@@ -314,6 +314,8 @@
             // Camera
             camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
             camera.position.set(0, 0, 5);
+            camera.lookAt(0, 0, 0); // Look at origin where triangle is
+            console.log('Camera position:', camera.position);
 
             // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -403,7 +405,16 @@
             });
 
             object = new THREE.Mesh(geometry, material);
+            object.position.set(0, 0, 0); // Start at origin
+            object.scale.set(1, 1, 1); // Ensure proper scale
+            object.visible = true; // Ensure visible
             scene.add(object);
+            
+            console.log('Triangle created:', object);
+            console.log('Triangle position:', object.position);
+            console.log('Triangle visible:', object.visible);
+            console.log('Triangle scale:', object.scale);
+            console.log('Scene children:', scene.children.length);
         }
 
         function addHolographicParticles() {
