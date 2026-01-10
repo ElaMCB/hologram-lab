@@ -6,6 +6,7 @@
 </p>
 
 <p align="center">
+  <a href="https://elamcb.github.io/hologram-lab/"><img src="https://img.shields.io/badge/hologram-3D%20jump--out-00ffff?style=for-the-badge&logoColor=ff00ff" alt="Hologram Lab"></a>
   <a href="https://github.com/ElaMCB/hologram-lab/actions"><img src="https://img.shields.io/github/actions/workflow/status/ElaMCB/hologram-lab/ci.yml?branch=main" alt="CI Status"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue" alt="Python Version"></a>
   <a href="https://github.com/ElaMCB/hologram-lab/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
