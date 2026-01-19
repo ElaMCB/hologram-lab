@@ -33,7 +33,7 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add demos/weekly-hologram-*.gif
+        git add -f demos/weekly-hologram-*.gif
         git diff --staged --quiet || git commit -m "Auto-generated weekly hologram simulation [skip ci]"
         git push
       env:

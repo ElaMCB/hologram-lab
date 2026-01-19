@@ -45,8 +45,11 @@ Thumbs.db
 demos/*.gif
 demos/*.png
 !demos/README.md
+!demos/weekly-hologram-*.gif  # Allow weekly auto-generated holograms
 *.log
 
 # Docker
 .dockerignore
+
+
 
