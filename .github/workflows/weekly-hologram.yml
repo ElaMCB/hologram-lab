@@ -9,10 +9,15 @@ on:
 jobs:
   generate-hologram:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -34,8 +39,10 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add -f demos/weekly-hologram-*.gif
-        git diff --staged --quiet || git commit -m "Auto-generated weekly hologram simulation [skip ci]"
-        git push
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if ! git diff --staged --quiet; then
+          git commit -m "Auto-generated weekly hologram simulation [skip ci]"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+        else
+          echo "No changes to commit"
+        fi
 
