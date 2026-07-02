@@ -32,7 +32,6 @@
     let headMaterial = null;
     let wireOverlay = null;
     let screenFrame = null;
-    let roboEyes = [];
     let isRotating = false;
     let wireframeMode = true;
     let themeIndex = 0;
@@ -212,41 +211,7 @@
         scene.add(glass);
     }
 
-    function addFuturisticEyes(parent, box) {
-        const size = box.getSize(new THREE.Vector3());
-        const cx = (box.min.x + box.max.x) * 0.5;
-        const cy = (box.min.y + box.max.y) * 0.5;
-        const cz = box.max.z;
-        const s = Math.max(size.x, size.y, size.z);
-        const t = theme();
-
-        roboEyes = [];
-
-        [-1, 1].forEach((side) => {
-            const eye = new THREE.Group();
-            eye.position.set(cx + side * size.x * 0.19, cy + size.y * 0.06, cz + s * 0.01);
-
-            const inner = tag(new THREE.Mesh(
-                new THREE.CircleGeometry(s * 0.016, 32),
-                new THREE.MeshBasicMaterial({
-                    color: t.accent,
-                    transparent: true,
-                    opacity: 0.95,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false,
-                })
-            ), 'pupil');
-            inner.position.z = 0.002;
-            eye.add(inner);
-            roboEyes.push(inner);
-
-            parent.add(eye);
-        });
-    }
-
     function buildFaceFromModel(gltf) {
-        roboEyes = [];
-
         const group = new THREE.Group();
         const model = gltf.scene;
 
@@ -259,8 +224,6 @@
         model.traverse((child) => {
             if (child.isMesh && !headMesh) headMesh = child;
         });
-
-        addFuturisticEyes(group, box);
 
         if (headMesh) {
             wireOverlay = tag(new THREE.Mesh(
@@ -350,7 +313,6 @@
                 sh.uniforms.uRim.value.setHex(t.rim);
             }
         }
-        roboEyes.forEach((p) => p.material.color.setHex(t.accent));
         if (wireOverlay) wireOverlay.material.color.setHex(t.accent);
         if (particleSystem) {
             const c = new THREE.Color(t.accent);
@@ -621,16 +583,6 @@
         renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
     }
 
-    function updateEyeGaze() {
-        const gazeX = THREE.MathUtils.clamp(eyePos.x / DISPLAY.eyeZ, -0.35, 0.35) * 0.012;
-        const gazeY = THREE.MathUtils.clamp(eyePos.y / DISPLAY.eyeZ, -0.35, 0.35) * 0.009;
-        roboEyes.forEach((pupil, i) => {
-            pupil.position.x = gazeX;
-            pupil.position.y = gazeY;
-            pupil.material.opacity = 0.8 + 0.2 * Math.sin(jumpTime * 2 + i);
-        });
-    }
-
     function animate() {
         requestAnimationFrame(animate);
         if (!renderer || !scene || !camera || !faceGroup) return;
@@ -653,8 +605,6 @@
         if (headMaterial?.userData.shader) {
             headMaterial.userData.shader.uniforms.uTime.value = jumpTime;
         }
-
-        updateEyeGaze();
 
         if (headMaterial) {
             headMaterial.emissiveIntensity = 0.06 + 0.04 * Math.sin(jumpTime * 1.2);
