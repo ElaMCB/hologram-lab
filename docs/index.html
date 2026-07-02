@@ -196,6 +196,42 @@
             border-color: rgba(0, 255, 255, 0.6);
         }
 
+        .demo-callout {
+            margin: 2rem auto 0;
+            padding: 1.25rem 1.5rem;
+            max-width: 640px;
+            background: rgba(0, 255, 255, 0.06);
+            border: 1px solid rgba(0, 255, 255, 0.25);
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .demo-callout h2 {
+            color: #00ffff;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-callout p {
+            opacity: 0.85;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+
+        .demo-callout a {
+            display: inline-block;
+            color: #00ffff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .demo-callout a:hover {
+            background: rgba(0, 255, 255, 0.15);
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
@@ -239,6 +275,15 @@
             <button id="wireframe-btn">Toggle Wireframe</button>
             <button id="color-btn">Change Color</button>
             <button id="reset-btn">Reset View</button>
+        </div>
+
+        <div class="demo-callout">
+            <h2>New: Robotic Face Hologram</h2>
+            <p>
+                Try our second live demo — a scanned human head transformed into a chrome android
+                with glowing eyes, panel seams, and holographic scanlines.
+            </p>
+            <a href="robotic-face-hologram/">Launch Robotic Face Demo →</a>
         </div>
 
         <div class="peppers-ghost">
