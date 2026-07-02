@@ -2,7 +2,9 @@
 
 A standalone WebGL demo — a real scanned human head rendered as a holographic android that pops out of the screen.
 
-This is a **separate project** from the main triangle/octahedron demo in `docs/`.
+This is a **separate project** from the main triangle/octahedron demo in `docs/`. It is listed on the [main GitHub Pages site](https://elamcb.github.io/hologram-lab/) in the **Live Demos** grid.
+
+When updating this demo, keep `docs/robotic-face-hologram/` in sync (that folder is what GitHub Pages serves).
 
 ## Run locally
 

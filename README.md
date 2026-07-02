@@ -19,7 +19,7 @@ pip install git+https://github.com/ElaMCB/hologram-lab
 holo-sim -m fresnel -i my.png -z 0.05 -o out.png
 ```
 
-Or try the [live WebGL demo](https://elamcb.github.io/hologram-lab/) — page respects OS dark-mode (toggle yours to see the pyramid glow).
+Or try the live WebGL demos on [GitHub Pages](https://elamcb.github.io/hologram-lab/) — [triangle hologram](https://elamcb.github.io/hologram-lab/) and [robotic face](https://elamcb.github.io/hologram-lab/robotic-face-hologram/).
 
 <details>
 <summary>Full tour (click to expand)</summary>
@@ -41,6 +41,8 @@ This repository provides everything you need to learn about holography—from cr
 | `real-holograms` | DIY LitiHolo kit tutorials, MIT course notes, INTEGRAF pro guides |
 | `simulations` | Fresnel / Fourier / Kinoform CGH notebooks + JackHCC fork |
 | `github-page-hologram` | WebGL Pepper's-ghost illusion that works on mobile |
+| `robotic-face-hologram` | Chrome android head scan with holographic shader |
+| `docs/` | GitHub Pages site — **all live demos must be linked from `docs/index.html`** |
 | `resources` | Curated books, papers, SLM controllers, datasets |
 | `demos` | Auto-generated GIFs & videos (updated nightly via CI) |
 
@@ -112,7 +114,16 @@ Explore CGH algorithms in `/simulations`:
 
 ## Interactive Web Hologram
 
-Visit the [GitHub Pages site](https://elamcb.github.io/hologram-lab) to see the interactive hologram effect in action. The implementation includes:
+Visit the [GitHub Pages site](https://elamcb.github.io/hologram-lab) for live WebGL demos:
+
+| Demo | URL |
+|------|-----|
+| Triangle Hologram | https://elamcb.github.io/hologram-lab/ |
+| Robotic Face Hologram | https://elamcb.github.io/hologram-lab/robotic-face-hologram/ |
+
+The main page includes a **Live Demos** grid — add every new interactive demo there (see [docs/README.md](docs/README.md)).
+
+Features include:
 - Real-time 3D rendering with WebGL
 - Mobile-responsive Pepper's Ghost effect
 - Smooth animations and interactions

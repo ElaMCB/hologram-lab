@@ -196,40 +196,66 @@
             border-color: rgba(0, 255, 255, 0.6);
         }
 
-        .demo-callout {
-            margin: 2rem auto 0;
-            padding: 1.25rem 1.5rem;
-            max-width: 640px;
-            background: rgba(0, 255, 255, 0.06);
-            border: 1px solid rgba(0, 255, 255, 0.25);
-            border-radius: 12px;
+        .live-demos {
+            margin: 0 auto 2.5rem;
+            max-width: 720px;
             text-align: left;
         }
 
-        .demo-callout h2 {
+        .live-demos h2 {
             color: #00ffff;
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+            margin-bottom: 1rem;
+            text-align: center;
         }
 
-        .demo-callout p {
-            opacity: 0.85;
-            line-height: 1.5;
-            margin-bottom: 0.75rem;
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
         }
 
-        .demo-callout a {
-            display: inline-block;
-            color: #00ffff;
+        .demo-card {
+            display: block;
+            padding: 1.1rem 1.25rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 10px;
             text-decoration: none;
-            padding: 0.5rem 1rem;
-            border: 1px solid rgba(0, 255, 255, 0.4);
-            border-radius: 6px;
+            color: inherit;
             transition: all 0.2s;
         }
 
-        .demo-callout a:hover {
-            background: rgba(0, 255, 255, 0.15);
+        .demo-card:hover {
+            background: rgba(0, 255, 255, 0.08);
+            border-color: rgba(0, 255, 255, 0.45);
+            transform: translateY(-2px);
+        }
+
+        .demo-card--active {
+            border-color: rgba(0, 255, 255, 0.55);
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.12);
+        }
+
+        .demo-card h3 {
+            color: #00ffff;
+            font-size: 1rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .demo-card p {
+            font-size: 0.88rem;
+            opacity: 0.75;
+            line-height: 1.45;
+        }
+
+        .demo-card .demo-badge {
+            display: inline-block;
+            margin-top: 0.6rem;
+            font-size: 0.75rem;
+            color: #00ffff;
+            opacity: 0.9;
         }
 
         @media (max-width: 768px) {
@@ -262,6 +288,24 @@
     <div class="container">
         <h1>Hologram Lab</h1>
         <p class="subtitle">Interactive 3D Hologram Simulation</p>
+
+        <!-- Live Demos: add every new WebGL demo here AND in docs/<demo-name>/ -->
+        <section class="live-demos" aria-label="Live demos">
+            <h2>Live Demos</h2>
+            <div class="demo-grid">
+                <div class="demo-card demo-card--active">
+                    <h3>Triangle Hologram</h3>
+                    <p>Classic pop-out octahedron with mouse parallax and Pepper's Ghost pyramid.</p>
+                    <span class="demo-badge">You are here</span>
+                </div>
+                <a class="demo-card" href="robotic-face-hologram/">
+                    <h3>Robotic Face Hologram</h3>
+                    <p>Scanned head as a chrome android — glowing eyes, panel seams, holographic scanlines.</p>
+                    <span class="demo-badge">Launch demo →</span>
+                </a>
+            </div>
+        </section>
+
         <p style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 2rem;">
             Watch the 3D triangle jump out of the screen! Move your mouse to interact.
         </p>
@@ -275,15 +319,6 @@
             <button id="wireframe-btn">Toggle Wireframe</button>
             <button id="color-btn">Change Color</button>
             <button id="reset-btn">Reset View</button>
-        </div>
-
-        <div class="demo-callout">
-            <h2>New: Robotic Face Hologram</h2>
-            <p>
-                Try our second live demo — a scanned human head transformed into a chrome android
-                with glowing eyes, panel seams, and holographic scanlines.
-            </p>
-            <a href="robotic-face-hologram/">Launch Robotic Face Demo →</a>
         </div>
 
         <div class="peppers-ghost">
@@ -319,7 +354,6 @@
 
             <h2 style="margin-top: 2rem;">Explore More</h2>
             <div class="links">
-                <a href="robotic-face-hologram/">Robotic Face Hologram</a>
                 <a href="https://github.com/ElaMCB/hologram-lab">Repository on GitHub</a>
                 <a href="https://github.com/ElaMCB/hologram-lab/tree/main/real-holograms">Real Hologram Tutorials</a>
                 <a href="https://github.com/ElaMCB/hologram-lab/tree/main/simulations">CGH Simulations</a>

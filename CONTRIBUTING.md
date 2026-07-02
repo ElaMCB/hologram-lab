@@ -103,13 +103,23 @@ black simulations/
 - Update this CONTRIBUTING.md if needed
 - Include examples in docstrings
 
+### New WebGL / GitHub Pages demos
+
+When adding an interactive demo:
+
+1. Deploy it under `docs/<demo-name>/`
+2. **Add a card to the Live Demos grid** in `docs/index.html` (required — see `docs/README.md`)
+3. Link it from the root README live demos table if user-facing
+
 ## Project Structure
 
 ```
 hologram-lab/
 ├── real-holograms/     # Physical hologram tutorials
 ├── simulations/        # CGH algorithms and code
-├── github-page-hologram/  # WebGL hologram demo
+├── docs/               # GitHub Pages (main site + live demos)
+├── robotic-face-hologram/  # Robotic face demo source
+├── github-page-hologram/  # Legacy WebGL hologram demo
 ├── resources/          # Curated resources
 ├── demos/             # Example outputs
 └── .github/           # GitHub Actions and templates
@@ -145,4 +155,6 @@ By contributing, you agree that your contributions will be licensed under the MI
 Feel free to open an issue with the `question` label or reach out to maintainers directly.
 
 Thank you for contributing to Hologram Lab!
+
+
 
