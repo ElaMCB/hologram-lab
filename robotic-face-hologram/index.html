@@ -154,8 +154,8 @@
 <body>
     <div class="container">
         <h1>Robotic Face Hologram</h1>
-        <p class="subtitle">Real head scan — chrome android shell, glowing eyes &amp; panel seams</p>
-        <p class="hint">Move your mouse — the face tracks you and pops ~7 cm out of the screen</p>
+        <p class="subtitle">Scanned head — dark chrome android with holographic rim glow</p>
+        <p class="hint">Move your mouse — the face tracks you and pops ~7 cm out of the screen. Toggle Wireframe for mesh view.</p>
 
         <div id="hologram-container">
             <div id="loading-status">Loading 3D head model…</div>
@@ -172,15 +172,14 @@
         <div class="info">
             <h2>About this demo</h2>
             <p>
-                Loads a photorealistic head scan and transforms it into a holographic android:
-                chrome metal skin, custom scanline shader, glowing robotic eyes, and
-                energy seams across the face panels.
+                A photorealistic head scan rendered as a futuristic android hologram —
+                dark chrome, cyan/magenta rim glow, and soft scan bands baked into the shader.
             </p>
             <ul>
-                <li>Chrome android material — not human skin tones</li>
-                <li>Glowing robotic eyes with cursor tracking</li>
-                <li>Panel seams, temple ports, forehead HUD strip</li>
-                <li>Scanline + fresnel hologram shader on the mesh</li>
+                <li>Dark chrome android — not human skin tones</li>
+                <li>Refined ring eyes with cursor tracking</li>
+                <li>Holographic fresnel rim + animated scan shader</li>
+                <li>Wireframe mode optional (Toggle Wireframe button)</li>
             </ul>
             <a class="back-link" href="../docs/index.html">← Back to main Hologram Lab demo</a>
         </div>
@@ -188,6 +187,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="face-hologram.js?v=9"></script>
+    <script src="face-hologram.js?v=10"></script>
 </body>
 </html>

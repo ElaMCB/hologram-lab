@@ -1,6 +1,5 @@
 /**
- * Humanoid Robotic Face Hologram
- * Real head scan + android chrome material, glowing eyes, panel seams
+ * Futuristic android face hologram — scanned head with shader-based holo treatment
  */
 (function () {
     'use strict';
@@ -9,21 +8,19 @@
     const MODEL_FALLBACK = 'https://threejs.org/examples/models/gltf/LeePerrySmith/LeePerrySmith.glb';
 
     const THEMES = [
-        { chrome: 0x8ea8b8, accent: 0x00ffff, glow: 0x00eeff },
-        { chrome: 0xa898b8, accent: 0xff00cc, glow: 0xff44dd },
-        { chrome: 0x88b8a0, accent: 0x00ff88, glow: 0x44ffaa },
-        { chrome: 0xb8a888, accent: 0xff8800, glow: 0xffaa44 },
+        { chrome: 0x1a2838, accent: 0x00e8ff, glow: 0x66f0ff, rim: 0xff44cc },
+        { chrome: 0x241a30, accent: 0xff00aa, glow: 0xff66dd, rim: 0x00eeff },
+        { chrome: 0x1a3028, accent: 0x00ffaa, glow: 0x66ffcc, rim: 0x0088ff },
+        { chrome: 0x302818, accent: 0xffaa00, glow: 0xffcc66, rim: 0xff3366 },
     ];
 
     let scene, camera, renderer, faceGroup, particleSystem;
     let headMesh = null;
     let headMaterial = null;
     let wireOverlay = null;
-    let holoShell = null;
-    let scanLines = [];
+    let holoRim = null;
     let roboEyes = [];
-    let seamMeshes = [];
-    let accentMeshes = [];
+    let eyeRings = [];
     let isRotating = false;
     let wireframeMode = false;
     let themeIndex = 0;
@@ -41,68 +38,52 @@
         return obj;
     }
 
-    function accentMat(opts = {}) {
-        const t = theme();
-        return new THREE.MeshStandardMaterial({
-            color: opts.color ?? t.accent,
-            emissive: t.glow,
-            emissiveIntensity: opts.intensity ?? 0.9,
-            metalness: 0.85,
-            roughness: 0.15,
-            transparent: true,
-            opacity: opts.opacity ?? 0.95,
-        });
-    }
-
-    function glowMat(intensity = 1.5) {
-        const t = theme();
-        return new THREE.MeshBasicMaterial({
-            color: t.glow,
-            transparent: true,
-            opacity: 0.95,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-        });
-    }
-
     function androidHeadMaterial(original) {
         const t = theme();
         const mat = new THREE.MeshStandardMaterial({
             color: t.chrome,
-            metalness: 0.94,
-            roughness: 0.12,
+            metalness: 0.97,
+            roughness: 0.06,
             emissive: t.accent,
-            emissiveIntensity: 0.12,
+            emissiveIntensity: 0.08,
             wireframe: wireframeMode,
         });
 
-        if (original && original.normalMap) {
+        if (original?.normalMap) {
             mat.normalMap = original.normalMap;
-            mat.normalScale = original.normalScale ? original.normalScale.clone() : new THREE.Vector2(0.6, 0.6);
+            mat.normalScale = new THREE.Vector2(0.35, 0.35);
         }
 
         mat.onBeforeCompile = (shader) => {
             shader.uniforms.uTime = { value: 0 };
             shader.uniforms.uGlow = { value: new THREE.Color(t.glow) };
             shader.uniforms.uAccent = { value: new THREE.Color(t.accent) };
+            shader.uniforms.uRim = { value: new THREE.Color(t.rim) };
 
             shader.fragmentShader = shader.fragmentShader.replace(
                 '#include <common>',
                 `#include <common>
                 uniform float uTime;
                 uniform vec3 uGlow;
-                uniform vec3 uAccent;`
+                uniform vec3 uAccent;
+                uniform vec3 uRim;`
             );
 
             shader.fragmentShader = shader.fragmentShader.replace(
                 '#include <dithering_fragment>',
                 `#include <dithering_fragment>
-                float fresnel = pow(1.0 - abs(dot(normalize(normal), normalize(vViewPosition))), 3.0);
-                gl_FragColor.rgb += uAccent * fresnel * 0.45;
-                float scan = sin((vViewPosition.y + vViewPosition.x * 0.3) * 55.0 - uTime * 2.5);
-                gl_FragColor.rgb += uGlow * max(scan, 0.0) * 0.06;
-                float grid = step(0.92, fract(vViewPosition.y * 18.0)) * step(0.92, fract(vViewPosition.x * 18.0));
-                gl_FragColor.rgb += uAccent * grid * 0.04;`
+                vec3 viewDir = normalize(vViewPosition);
+                vec3 n = normalize(normal);
+                float fresnel = pow(1.0 - max(dot(n, -viewDir), 0.0), 2.8);
+                gl_FragColor.rgb += mix(uAccent, uRim, fresnel * 0.6) * fresnel * 0.55;
+
+                float scan = smoothstep(0.92, 1.0, sin(vViewPosition.y * 38.0 - uTime * 1.8));
+                gl_FragColor.rgb += uGlow * scan * 0.07;
+
+                float holoBand = smoothstep(0.97, 1.0, sin(vViewPosition.y * 12.0 + uTime * 0.8));
+                gl_FragColor.rgb += uAccent * holoBand * 0.04;
+
+                gl_FragColor.rgb = mix(gl_FragColor.rgb, uGlow, fresnel * 0.08);`
             );
 
             mat.userData.shader = shader;
@@ -118,7 +99,7 @@
                 const orig = child.material;
                 headMaterial = androidHeadMaterial(orig);
                 child.material = headMaterial;
-                if (orig && orig.dispose) orig.dispose();
+                if (orig?.dispose) orig.dispose();
                 tag(child, 'head');
             }
         });
@@ -127,167 +108,89 @@
     function fitModel(model) {
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-
         model.position.sub(center);
-        const scale = 2.15 / Math.max(size.x, size.y, size.z);
-        model.scale.setScalar(scale);
+        model.scale.setScalar(2.15 / Math.max(...box.getSize(new THREE.Vector3()).toArray()));
         return new THREE.Box3().setFromObject(model);
     }
 
-    function addSeam(parent, points, radius = 0.004) {
-        const curve = new THREE.CatmullRomCurve3(points);
-        const mesh = tag(
-            new THREE.Mesh(new THREE.TubeGeometry(curve, 48, radius, 6, false), accentMat({ intensity: 0.75 })),
-            'seam'
-        );
-        parent.add(mesh);
-        seamMeshes.push(mesh);
-        return mesh;
-    }
-
-    function addRoboticOverlay(parent, box) {
+    function addFuturisticEyes(parent, box) {
         const size = box.getSize(new THREE.Vector3());
         const cx = (box.min.x + box.max.x) * 0.5;
         const cy = (box.min.y + box.max.y) * 0.5;
         const cz = box.max.z;
         const s = Math.max(size.x, size.y, size.z);
+        const t = theme();
 
-        const overlay = new THREE.Group();
-
-        // Android eyes — replace closed human eyelids
         roboEyes = [];
+        eyeRings = [];
+
         [-1, 1].forEach((side) => {
             const eye = new THREE.Group();
-            eye.position.set(cx + side * size.x * 0.19, cy + size.y * 0.06, cz - s * 0.02);
+            eye.position.set(cx + side * size.x * 0.19, cy + size.y * 0.06, cz + s * 0.01);
 
-            const socket = new THREE.Mesh(
-                new THREE.SphereGeometry(s * 0.055, 16, 16),
-                new THREE.MeshStandardMaterial({ color: 0x050508, metalness: 0.9, roughness: 0.1 })
-            );
-            socket.scale.set(1.2, 0.7, 0.35);
-            eye.add(socket);
+            const ring = tag(new THREE.Mesh(
+                new THREE.RingGeometry(s * 0.022, s * 0.038, 48),
+                new THREE.MeshBasicMaterial({
+                    color: t.glow,
+                    transparent: true,
+                    opacity: 0.85,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    side: THREE.DoubleSide,
+                })
+            ), 'eyeRing');
+            eye.add(ring);
+            eyeRings.push(ring);
 
-            const iris = tag(new THREE.Mesh(
-                new THREE.TorusGeometry(s * 0.028, s * 0.007, 10, 32),
-                accentMat({ intensity: 1.1 })
-            ), 'accent');
-            iris.rotation.x = Math.PI / 2;
-            iris.position.z = s * 0.018;
-            eye.add(iris);
-
-            const pupil = tag(new THREE.Mesh(
-                new THREE.SphereGeometry(s * 0.014, 12, 12),
-                glowMat()
+            const inner = tag(new THREE.Mesh(
+                new THREE.CircleGeometry(s * 0.018, 32),
+                new THREE.MeshBasicMaterial({
+                    color: t.accent,
+                    transparent: true,
+                    opacity: 0.95,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                })
             ), 'pupil');
-            pupil.position.z = s * 0.022;
-            eye.add(pupil);
-            roboEyes.push(pupil);
+            inner.position.z = 0.002;
+            eye.add(inner);
+            roboEyes.push(inner);
 
-            const brow = new THREE.Mesh(
-                new THREE.BoxGeometry(s * 0.11, s * 0.018, s * 0.012),
-                accentMat({ intensity: 0.35, opacity: 0.7 })
+            const highlight = new THREE.Mesh(
+                new THREE.CircleGeometry(s * 0.005, 16),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.7,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                })
             );
-            brow.position.set(0, s * 0.045, s * 0.01);
-            eye.add(brow);
-            accentMeshes.push(brow);
+            highlight.position.set(side * -s * 0.006, s * 0.005, 0.003);
+            eye.add(highlight);
 
-            overlay.add(eye);
+            parent.add(eye);
         });
-
-        // Forehead android panel
-        const forehead = tag(new THREE.Mesh(
-            new THREE.BoxGeometry(size.x * 0.35, size.y * 0.06, s * 0.015),
-            accentMat({ intensity: 0.25, opacity: 0.55, color: theme().chrome })
-        ), 'accent');
-        forehead.position.set(cx, cy + size.y * 0.28, cz - s * 0.01);
-        overlay.add(forehead);
-        accentMeshes.push(forehead);
-
-        // Temple ports
-        [-1, 1].forEach((side) => {
-            const port = tag(new THREE.Mesh(
-                new THREE.CylinderGeometry(s * 0.018, s * 0.018, s * 0.025, 10),
-                accentMat({ intensity: 0.85 })
-            ), 'accent');
-            port.rotation.z = Math.PI / 2;
-            port.position.set(cx + side * size.x * 0.42, cy + size.y * 0.12, cz - size.z * 0.35);
-            overlay.add(port);
-            accentMeshes.push(port);
-        });
-
-        // Jaw actuator line
-        addSeam(overlay, [
-            new THREE.Vector3(cx - size.x * 0.22, cy - size.y * 0.22, cz - s * 0.03),
-            new THREE.Vector3(cx, cy - size.y * 0.28, cz),
-            new THREE.Vector3(cx + size.x * 0.22, cy - size.y * 0.22, cz - s * 0.03),
-        ], s * 0.003);
-
-        // Central cranial seam
-        addSeam(overlay, [
-            new THREE.Vector3(cx, cy + size.y * 0.38, cz - size.z * 0.2),
-            new THREE.Vector3(cx, cy + size.y * 0.1, cz),
-            new THREE.Vector3(cx, cy - size.y * 0.15, cz - s * 0.02),
-        ], s * 0.003);
-
-        // Cheek panel seams
-        [-1, 1].forEach((side) => {
-            addSeam(overlay, [
-                new THREE.Vector3(cx + side * size.x * 0.12, cy + size.y * 0.15, cz),
-                new THREE.Vector3(cx + side * size.x * 0.28, cy, cz - s * 0.01),
-                new THREE.Vector3(cx + side * size.x * 0.18, cy - size.y * 0.18, cz - s * 0.04),
-            ], s * 0.0025);
-        });
-
-        // Lip energy seam (horizontal, neutral)
-        const lipLine = tag(new THREE.Mesh(
-            new THREE.BoxGeometry(size.x * 0.18, s * 0.003, s * 0.008),
-            accentMat({ intensity: 0.55, opacity: 0.75 })
-        ), 'accent');
-        lipLine.position.set(cx, cy - size.y * 0.14, cz - s * 0.005);
-        overlay.add(lipLine);
-        accentMeshes.push(lipLine);
-
-        parent.add(overlay);
     }
 
-    function addHoloEffects(parent, radius) {
-        holoShell = tag(new THREE.Mesh(
-            new THREE.SphereGeometry(radius * 1.1, 32, 32),
+    function addHoloRim(parent, radius) {
+        holoRim = tag(new THREE.Mesh(
+            new THREE.SphereGeometry(radius * 1.02, 48, 48),
             new THREE.MeshBasicMaterial({
                 color: theme().glow,
                 transparent: true,
-                opacity: 0.045,
+                opacity: 0.025,
                 side: THREE.BackSide,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
             })
         ), 'shell');
-        parent.add(holoShell);
-
-        scanLines = [];
-        for (let i = 0; i < 4; i++) {
-            const sl = tag(new THREE.Mesh(
-                new THREE.PlaneGeometry(radius * 1.8, 0.01),
-                new THREE.MeshBasicMaterial({
-                    color: theme().glow,
-                    transparent: true,
-                    opacity: 0.14,
-                    blending: THREE.AdditiveBlending,
-                    side: THREE.DoubleSide,
-                    depthWrite: false,
-                })
-            ), 'scan');
-            sl.userData.phase = i * 1.6;
-            parent.add(sl);
-            scanLines.push(sl);
-        }
+        parent.add(holoRim);
     }
 
     function buildFaceFromModel(gltf) {
-        seamMeshes = [];
-        accentMeshes = [];
         roboEyes = [];
+        eyeRings = [];
 
         const group = new THREE.Group();
         const model = gltf.scene;
@@ -300,10 +203,9 @@
             if (child.isMesh && !headMesh) headMesh = child;
         });
 
-        addRoboticOverlay(group, box);
+        addFuturisticEyes(group, box);
 
-        const size = box.getSize(new THREE.Vector3());
-        const radius = Math.max(size.x, size.y, size.z) * 0.55;
+        const radius = Math.max(...box.getSize(new THREE.Vector3()).toArray()) * 0.55;
 
         if (headMesh) {
             wireOverlay = tag(new THREE.Mesh(
@@ -312,16 +214,16 @@
                     color: theme().accent,
                     wireframe: true,
                     transparent: true,
-                    opacity: 0.07,
+                    opacity: 0.04,
                     blending: THREE.AdditiveBlending,
                     depthWrite: false,
                 })
             ), 'wireOverlay');
-            wireOverlay.visible = true;
+            wireOverlay.visible = false;
             headMesh.parent.add(wireOverlay);
         }
 
-        addHoloEffects(group, radius);
+        addHoloRim(group, radius);
         return group;
     }
 
@@ -347,7 +249,6 @@
         try {
             gltf = await loadModel(MODEL_URL);
         } catch (e) {
-            console.warn('Local model failed, trying CDN', e);
             setLoading('Loading from CDN…');
             gltf = await loadModel(MODEL_FALLBACK);
         }
@@ -356,16 +257,16 @@
     }
 
     function addParticles() {
-        const count = 350;
+        const count = 120;
         const geo = new THREE.BufferGeometry();
         const positions = new Float32Array(count * 3);
         const colors = new Float32Array(count * 3);
         const c = new THREE.Color(theme().accent);
 
         for (let i = 0; i < count * 3; i += 3) {
-            positions[i] = (Math.random() - 0.5) * 5;
-            positions[i + 1] = (Math.random() - 0.5) * 5;
-            positions[i + 2] = (Math.random() - 0.5) * 3;
+            positions[i] = (Math.random() - 0.5) * 4;
+            positions[i + 1] = (Math.random() - 0.5) * 4;
+            positions[i + 2] = (Math.random() - 0.5) * 2.5;
             colors[i] = c.r; colors[i + 1] = c.g; colors[i + 2] = c.b;
         }
 
@@ -373,10 +274,10 @@
         geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
         particleSystem = new THREE.Points(geo, new THREE.PointsMaterial({
-            size: 0.02,
+            size: 0.012,
             vertexColors: true,
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.35,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
         }));
@@ -388,30 +289,17 @@
         if (headMaterial) {
             headMaterial.color.setHex(t.chrome);
             headMaterial.emissive.setHex(t.accent);
-            if (headMaterial.userData.shader) {
-                headMaterial.userData.shader.uniforms.uGlow.value.setHex(t.glow);
-                headMaterial.userData.shader.uniforms.uAccent.value.setHex(t.accent);
+            const sh = headMaterial.userData.shader;
+            if (sh) {
+                sh.uniforms.uGlow.value.setHex(t.glow);
+                sh.uniforms.uAccent.value.setHex(t.accent);
+                sh.uniforms.uRim.value.setHex(t.rim);
             }
         }
-        accentMeshes.forEach((m) => {
-            if (m.material.emissive) {
-                m.material.color.setHex(m.userData.role === 'accent' ? t.accent : t.chrome);
-                m.material.emissive.setHex(t.glow);
-            }
-        });
-        seamMeshes.forEach((m) => {
-            m.material.color.setHex(t.accent);
-            m.material.emissive.setHex(t.glow);
-        });
-        roboEyes.forEach((p) => p.material.color.setHex(t.glow));
-        if (faceGroup) {
-            faceGroup.traverse((ch) => {
-                if (ch.userData.role === 'shell' || ch.userData.role === 'scan') {
-                    ch.material.color.setHex(t.glow);
-                }
-                if (ch.userData.role === 'wireOverlay') ch.material.color.setHex(t.accent);
-            });
-        }
+        roboEyes.forEach((p) => p.material.color.setHex(t.accent));
+        eyeRings.forEach((r) => r.material.color.setHex(t.glow));
+        if (holoRim) holoRim.material.color.setHex(t.glow);
+        if (wireOverlay) wireOverlay.material.color.setHex(t.accent);
         if (particleSystem) {
             const c = new THREE.Color(t.accent);
             const arr = particleSystem.geometry.attributes.color.array;
@@ -424,7 +312,7 @@
 
     function setWireframe(enabled) {
         if (headMaterial) headMaterial.wireframe = enabled;
-        if (wireOverlay) wireOverlay.material.opacity = enabled ? 0.14 : 0.07;
+        if (wireOverlay) wireOverlay.visible = enabled;
     }
 
     async function init() {
@@ -438,18 +326,18 @@
         const height = container.clientHeight || window.innerHeight;
 
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x020208);
-        scene.fog = new THREE.FogExp2(0x020208, 0.06);
+        scene.background = new THREE.Color(0x010108);
+        scene.fog = new THREE.FogExp2(0x010108, 0.045);
 
-        camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-        camera.position.set(0, 0, 3.8);
+        camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
+        camera.position.set(0, 0, 3.75);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
+        renderer.toneMappingExposure = 1.35;
         container.appendChild(renderer.domElement);
 
         try {
@@ -461,27 +349,27 @@
             return;
         }
 
-        scene.add(new THREE.AmbientLight(0x334455, 0.4));
-        scene.add(new THREE.HemisphereLight(0x446688, 0x080412, 0.5));
+        scene.add(new THREE.AmbientLight(0x223344, 0.35));
+        scene.add(new THREE.HemisphereLight(0x335566, 0x020208, 0.45));
 
         const t = theme();
-        const key = new THREE.DirectionalLight(0xaaccff, 0.7);
-        key.position.set(2, 3, 5);
+        const key = new THREE.DirectionalLight(0xcceeff, 0.55);
+        key.position.set(1, 2, 4);
         scene.add(key);
 
-        const accentKey = new THREE.DirectionalLight(t.accent, 0.35);
-        accentKey.position.set(-3, 1, 2);
-        scene.add(accentKey);
+        const rim = new THREE.DirectionalLight(t.glow, 0.45);
+        rim.position.set(-2, 0, -3);
+        scene.add(rim);
 
-        const fill = new THREE.PointLight(t.accent, 0.9, 20);
-        fill.position.set(-2, 1, 3);
+        const fill = new THREE.PointLight(t.accent, 0.65, 18);
+        fill.position.set(-1.5, 0.5, 2.5);
         fill.name = 'fillLight';
         scene.add(fill);
 
-        const rim = new THREE.PointLight(t.glow, 0.7, 15);
-        rim.position.set(0, 0, -2);
-        rim.name = 'rimLight';
-        scene.add(rim);
+        const glow = new THREE.PointLight(t.glow, 0.5, 12);
+        glow.position.set(0, 0.3, 1);
+        glow.name = 'glowLight';
+        scene.add(glow);
 
         addParticles();
         setupControls(renderer.domElement);
@@ -497,15 +385,13 @@
             applyTheme();
             const th = theme();
             scene.children.forEach((ch) => {
-                if (ch instanceof THREE.PointLight) {
-                    if (ch.name === 'fillLight') ch.color.setHex(th.accent);
-                    if (ch.name === 'rimLight') ch.color.setHex(th.glow);
-                }
+                if (ch instanceof THREE.PointLight && ch.name === 'fillLight') ch.color.setHex(th.accent);
+                if (ch instanceof THREE.PointLight && ch.name === 'glowLight') ch.color.setHex(th.glow);
             });
         });
         document.getElementById('reset-btn')?.addEventListener('click', () => {
             if (faceGroup) faceGroup.rotation.set(0, 0, 0);
-            camera.position.set(0, 0, 3.8);
+            camera.position.set(0, 0, 3.75);
             lookTarget = { x: 0, y: 0 };
         });
 
@@ -559,29 +445,25 @@
         }
 
         roboEyes.forEach((pupil, i) => {
-            pupil.position.x = lookTarget.x * 0.012;
-            pupil.position.y = lookTarget.y * 0.008;
-            if (pupil.material.opacity !== undefined) {
-                pupil.material.opacity = 0.85 + 0.15 * Math.sin(jumpTime * 2.5 + i);
-            }
+            pupil.position.x = lookTarget.x * 0.01;
+            pupil.position.y = lookTarget.y * 0.007;
+            pupil.material.opacity = 0.8 + 0.2 * Math.sin(jumpTime * 2 + i);
         });
 
-        seamMeshes.forEach((s, i) => {
-            s.material.emissiveIntensity = 0.55 + 0.4 * Math.sin(jumpTime * 3 + i * 0.8);
+        eyeRings.forEach((ring, i) => {
+            ring.material.opacity = 0.65 + 0.25 * Math.sin(jumpTime * 1.6 + i * 0.5);
+            ring.scale.setScalar(0.98 + 0.04 * Math.sin(jumpTime * 2.2 + i));
         });
 
-        scanLines.forEach((sl) => {
-            sl.position.y = Math.sin(jumpTime * 1.3 + sl.userData.phase) * 0.6;
-            sl.material.opacity = 0.06 + 0.1 * (0.5 + 0.5 * Math.sin(jumpTime * 2 + sl.userData.phase));
-        });
-
-        if (holoShell) holoShell.material.opacity = 0.03 + 0.025 * Math.sin(jumpTime);
-
-        if (headMaterial) {
-            headMaterial.emissiveIntensity = 0.1 + 0.05 * Math.sin(jumpTime * 1.5);
+        if (holoRim) {
+            holoRim.material.opacity = 0.018 + 0.012 * Math.sin(jumpTime * 0.9);
         }
 
-        if (particleSystem) particleSystem.rotation.y += 0.0008;
+        if (headMaterial) {
+            headMaterial.emissiveIntensity = 0.06 + 0.04 * Math.sin(jumpTime * 1.2);
+        }
+
+        if (particleSystem) particleSystem.rotation.y += 0.0004;
 
         renderer.render(scene, camera);
     }
