@@ -9,10 +9,10 @@
     const MODEL_FALLBACK = 'https://threejs.org/examples/models/gltf/LeePerrySmith/LeePerrySmith.glb';
 
     const THEMES = [
-        { chrome: 0x1a2838, accent: 0x00e8ff, glow: 0x66f0ff, rim: 0xff44cc },
-        { chrome: 0x241a30, accent: 0xff00aa, glow: 0xff66dd, rim: 0x00eeff },
-        { chrome: 0x1a3028, accent: 0x00ffaa, glow: 0x66ffcc, rim: 0x0088ff },
-        { chrome: 0x302818, accent: 0xffaa00, glow: 0xffcc66, rim: 0xff3366 },
+        { chrome: 0x586878, accent: 0x00e8ff, glow: 0x66f0ff, rim: 0xff44cc },
+        { chrome: 0x645870, accent: 0xff00aa, glow: 0xff66dd, rim: 0x00eeff },
+        { chrome: 0x587068, accent: 0x00ffaa, glow: 0x66ffcc, rim: 0x0088ff },
+        { chrome: 0x706858, accent: 0xffaa00, glow: 0xffcc66, rim: 0xff3366 },
     ];
 
     /** Physical display model — units are metres */
@@ -47,6 +47,7 @@
     let webcamStream = null;
     let faceDetector = null;
     let webcamLoopId = null;
+    let metalEnvMap = null;
 
     function theme() { return THEMES[themeIndex]; }
 
@@ -107,24 +108,61 @@
         );
     }
 
+    function createMetalEnvMap() {
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        pmrem.compileCubemapShader();
+
+        const envScene = new THREE.Scene();
+        const sky = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1, 1),
+            [
+                new THREE.MeshBasicMaterial({ color: 0x667788 }),
+                new THREE.MeshBasicMaterial({ color: 0x445566 }),
+                new THREE.MeshBasicMaterial({ color: 0xb0c0d8 }),
+                new THREE.MeshBasicMaterial({ color: 0x101018 }),
+                new THREE.MeshBasicMaterial({ color: 0x556677 }),
+                new THREE.MeshBasicMaterial({ color: 0x334455 }),
+            ]
+        );
+        envScene.add(sky);
+
+        const key = new THREE.DirectionalLight(0xffffff, 2.2);
+        key.position.set(1.5, 2, 1);
+        envScene.add(key);
+        const fill = new THREE.DirectionalLight(0x88aacc, 1.1);
+        fill.position.set(-2, 0.5, -1);
+        envScene.add(fill);
+
+        const map = pmrem.fromScene(envScene, 0.04).texture;
+        pmrem.dispose();
+        sky.geometry.dispose();
+        sky.material.forEach((m) => m.dispose());
+        return map;
+    }
+
     function androidHeadMaterial(original) {
         const t = theme();
-        const mat = new THREE.MeshStandardMaterial({
+        const mat = new THREE.MeshPhysicalMaterial({
             color: t.chrome,
-            metalness: 0.97,
-            roughness: 0.06,
+            metalness: 1.0,
+            roughness: 0.16,
+            clearcoat: 0.92,
+            clearcoatRoughness: 0.08,
+            envMap: metalEnvMap,
+            envMapIntensity: 1.65,
             emissive: t.accent,
-            emissiveIntensity: 0.08,
+            emissiveIntensity: 0.008,
             wireframe: false,
         });
 
         if (original?.normalMap) {
             mat.normalMap = original.normalMap;
-            mat.normalScale = new THREE.Vector2(0.35, 0.35);
+            mat.normalScale = new THREE.Vector2(0.06, 0.06);
         }
 
         mat.onBeforeCompile = (shader) => {
             shader.uniforms.uTime = { value: 0 };
+            shader.uniforms.uSolid = { value: 0 };
             shader.uniforms.uGlow = { value: new THREE.Color(t.glow) };
             shader.uniforms.uAccent = { value: new THREE.Color(t.accent) };
             shader.uniforms.uRim = { value: new THREE.Color(t.rim) };
@@ -133,6 +171,7 @@
                 '#include <common>',
                 `#include <common>
                 uniform float uTime;
+                uniform float uSolid;
                 uniform vec3 uGlow;
                 uniform vec3 uAccent;
                 uniform vec3 uRim;`
@@ -143,16 +182,26 @@
                 `#include <dithering_fragment>
                 vec3 viewDir = normalize(vViewPosition);
                 vec3 n = normalize(normal);
-                float fresnel = pow(1.0 - max(dot(n, -viewDir), 0.0), 2.8);
-                gl_FragColor.rgb += mix(uAccent, uRim, fresnel * 0.6) * fresnel * 0.55;
+                float fresnel = pow(1.0 - max(dot(n, -viewDir), 0.0), 3.2);
+                float holoMix = mix(1.0, 0.12, uSolid);
+                gl_FragColor.rgb += mix(uAccent, uRim, fresnel * 0.6) * fresnel * 0.55 * holoMix;
 
                 float scan = smoothstep(0.92, 1.0, sin(vViewPosition.y * 38.0 - uTime * 1.8));
-                gl_FragColor.rgb += uGlow * scan * 0.07;
+                gl_FragColor.rgb += uGlow * scan * 0.07 * holoMix;
 
                 float holoBand = smoothstep(0.97, 1.0, sin(vViewPosition.y * 12.0 + uTime * 0.8));
-                gl_FragColor.rgb += uAccent * holoBand * 0.04;
+                gl_FragColor.rgb += uAccent * holoBand * 0.04 * holoMix;
 
-                gl_FragColor.rgb = mix(gl_FragColor.rgb, uGlow, fresnel * 0.08);`
+                if (uSolid > 0.5) {
+                    float brush = sin(dot(vViewPosition, vec3(48.0, 6.0, 18.0))) * 0.035;
+                    gl_FragColor.rgb += vec3(brush);
+
+                    float panel = smoothstep(0.965, 1.0, abs(sin(vViewPosition.y * 26.0)))
+                                * smoothstep(0.965, 1.0, abs(sin(vViewPosition.x * 22.0)));
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * 0.82 + uAccent * 0.18, panel * 0.22);
+                } else {
+                    gl_FragColor.rgb = mix(gl_FragColor.rgb, uGlow, fresnel * 0.08);
+                }`
             );
 
             mat.userData.shader = shader;
@@ -324,13 +373,26 @@
         }
     }
 
+    function applyMaterialMode(enabled) {
+        if (!headMaterial) return;
+        headMaterial.transparent = enabled;
+        headMaterial.opacity = enabled ? 0.28 : 1;
+        headMaterial.emissiveIntensity = enabled ? 0.03 : 0.008;
+        headMaterial.metalness = enabled ? 0.45 : 1.0;
+        headMaterial.roughness = enabled ? 0.4 : 0.16;
+        headMaterial.envMapIntensity = enabled ? 0.35 : 1.65;
+        headMaterial.clearcoat = enabled ? 0 : 0.92;
+        headMaterial.clearcoatRoughness = enabled ? 0.5 : 0.08;
+        if (headMaterial.normalScale) {
+            headMaterial.normalScale.setScalar(enabled ? 0.15 : 0.06);
+        }
+        const sh = headMaterial.userData.shader;
+        if (sh?.uniforms?.uSolid) sh.uniforms.uSolid.value = enabled ? 0 : 1;
+    }
+
     function setWireframe(enabled) {
         wireframeMode = enabled;
-        if (headMaterial) {
-            headMaterial.wireframe = false;
-            headMaterial.opacity = enabled ? 0.35 : 1;
-            headMaterial.transparent = enabled;
-        }
+        applyMaterialMode(enabled);
         if (wireOverlay) wireOverlay.visible = enabled;
     }
 
@@ -451,8 +513,11 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.35;
+        renderer.toneMappingExposure = 1.45;
         canvasContainer.appendChild(renderer.domElement);
+
+        metalEnvMap = createMetalEnvMap();
+        scene.environment = metalEnvMap;
 
         addScreenFrame();
 
@@ -465,24 +530,28 @@
             return;
         }
 
-        scene.add(new THREE.AmbientLight(0x223344, 0.35));
-        scene.add(new THREE.HemisphereLight(0x335566, 0x020208, 0.45));
+        scene.add(new THREE.AmbientLight(0x1a2233, 0.15));
+        scene.add(new THREE.HemisphereLight(0x446688, 0x080810, 0.22));
 
         const t = theme();
-        const key = new THREE.DirectionalLight(0xcceeff, 0.55);
-        key.position.set(0.15, 0.35, 0.6);
+        const key = new THREE.DirectionalLight(0xf0f8ff, 1.05);
+        key.position.set(0.2, 0.45, 0.55);
         scene.add(key);
 
-        const rim = new THREE.DirectionalLight(t.glow, 0.45);
+        const spec = new THREE.DirectionalLight(0xffffff, 0.75);
+        spec.position.set(-0.35, 0.25, 0.45);
+        scene.add(spec);
+
+        const rim = new THREE.DirectionalLight(t.glow, 0.35);
         rim.position.set(-0.25, 0, -0.35);
         scene.add(rim);
 
-        const fill = new THREE.PointLight(t.accent, 0.65, 3);
+        const fill = new THREE.PointLight(t.accent, 0.35, 3);
         fill.position.set(-0.2, 0.08, 0.35);
         fill.name = 'fillLight';
         scene.add(fill);
 
-        const glow = new THREE.PointLight(t.glow, 0.5, 2);
+        const glow = new THREE.PointLight(t.glow, 0.25, 2);
         glow.position.set(0, 0.05, 0.2);
         glow.name = 'glowLight';
         scene.add(glow);
@@ -502,6 +571,7 @@
         document.getElementById('color-btn')?.addEventListener('click', () => {
             themeIndex = (themeIndex + 1) % THEMES.length;
             applyTheme();
+            applyMaterialMode(wireframeMode);
             const th = theme();
             scene.children.forEach((ch) => {
                 if (ch instanceof THREE.PointLight && ch.name === 'fillLight') ch.color.setHex(th.accent);
@@ -607,7 +677,9 @@
         }
 
         if (headMaterial) {
-            headMaterial.emissiveIntensity = 0.06 + 0.04 * Math.sin(jumpTime * 1.2);
+            headMaterial.emissiveIntensity = wireframeMode
+                ? 0.03 + 0.02 * Math.sin(jumpTime * 1.2)
+                : 0.008 + 0.003 * Math.sin(jumpTime * 1.2);
         }
 
         if (particleSystem) particleSystem.rotation.y += 0.0004;
