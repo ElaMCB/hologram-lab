@@ -22,7 +22,9 @@ This directory contains GitHub Actions workflows for automating repository tasks
 5. Commits the generated GIF to the `demos/` directory
 6. Pushes the changes to the repository
 
-**Output**: A new GIF file in `demos/weekly-hologram-YYYYMMDD.gif`
+**Output**: A new GIF in `demos/weekly-hologram-YYYYMMDD.gif`, plus an updated `docs/weekly-gallery.json` for the main GitHub Pages site.
+
+**Retention**: Only the 4 most recent weekly GIFs are kept (older files are deleted automatically).
 
 **Note**: This workflow requires write permissions. Make sure your repository settings allow GitHub Actions to write to the repository. You may need to adjust permissions in Settings > Actions > General > Workflow permissions.
 
@@ -60,4 +62,6 @@ If workflows need to write to the repository:
 - GitHub Actions schedules can be delayed
 - Free tier has rate limits
 - Check Actions tab for execution history
+
+
 

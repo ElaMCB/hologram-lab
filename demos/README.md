@@ -6,7 +6,7 @@ This directory contains demonstrations of holograms and holographic effects.
 
 ### Generated Simulations
 - `fourier_hologram_demo.png` - Example Fourier hologram generation
-- `weekly-hologram-*.gif` - Auto-generated weekly hologram animations
+- `weekly-hologram-*.gif` - Auto-generated weekly hologram animations (CI keeps the **4 most recent**)
 
 ### Real Hologram Photos
 Add photos of physical holograms you've created here. Recommended format:
@@ -71,4 +71,6 @@ If you use external resources or demos:
 - Include attribution
 - Link to original source
 - Note any modifications made
+
+
 

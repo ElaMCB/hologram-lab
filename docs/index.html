@@ -258,6 +258,65 @@
             opacity: 0.9;
         }
 
+        .weekly-gallery {
+            margin: 3rem auto;
+            max-width: 900px;
+            text-align: left;
+        }
+
+        .weekly-gallery h2 {
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .weekly-gallery > p {
+            text-align: center;
+            opacity: 0.75;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .gallery-item {
+            margin: 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .gallery-item img {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #000;
+        }
+
+        .gallery-item figcaption {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            color: #00ffff;
+        }
+
+        .weekly-gallery .gallery-link {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            color: #00ffff;
+            text-decoration: none;
+        }
+
+        .weekly-gallery .gallery-link:hover {
+            text-decoration: underline;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
@@ -337,6 +396,13 @@
             </p>
         </div>
 
+        <section class="weekly-gallery" id="weekly-gallery" aria-label="Weekly hologram gallery">
+            <h2>Weekly Hologram Gallery</h2>
+            <p>Auto-generated every Monday — rotating interference patterns (NumPy + Matplotlib).</p>
+            <div class="gallery-grid" id="gallery-grid"></div>
+            <a class="gallery-link" href="https://github.com/ElaMCB/hologram-lab/tree/main/demos">All demos on GitHub →</a>
+        </section>
+
         <div class="info-section">
             <h2>About This Simulation</h2>
             <p>
@@ -363,6 +429,26 @@
         </div>
     </div>
 
+    <script>
+        fetch('weekly-gallery.json')
+            .then((r) => r.json())
+            .then((data) => {
+                const grid = document.getElementById('gallery-grid');
+                if (!grid || !data.items?.length) return;
+                const base = `https://raw.githubusercontent.com/${data.repo}/main/`;
+                data.items.forEach((item, i) => {
+                    const fig = document.createElement('figure');
+                    fig.className = 'gallery-item';
+                    const cap = i === 0 ? `${item.date} · latest` : item.date;
+                    fig.innerHTML = `<img src="${base}${item.file}" alt="Weekly hologram ${item.date}" loading="lazy"><figcaption>${cap}</figcaption>`;
+                    grid.appendChild(fig);
+                });
+            })
+            .catch(() => {
+                const section = document.getElementById('weekly-gallery');
+                if (section) section.style.display = 'none';
+            });
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         // Scene setup - simplified working version
