@@ -1,5 +1,6 @@
 /**
- * Futuristic android face hologram — scanned head with shader-based holo treatment
+ * Futuristic android face hologram with forced-perspective (anamorphic) display.
+ * The screen is treated as a window — camera projection matches viewer eye position.
  */
 (function () {
     'use strict';
@@ -14,28 +15,99 @@
         { chrome: 0x302818, accent: 0xffaa00, glow: 0xffcc66, rim: 0xff3366 },
     ];
 
-    let scene, camera, renderer, faceGroup, particleSystem;
+    /** Physical display model — units are metres */
+    const DISPLAY = {
+        screenWidth: 0.40,
+        eyeZ: 0.55,
+        eyeZMin: 0.32,
+        eyeZMax: 0.85,
+        maxEyeX: 0.16,
+        maxEyeY: 0.11,
+        holoDepth: 0.08,
+        smooth: 0.14,
+    };
+
+    let scene, camera, renderer, faceGroup, particleSystem, canvasContainer;
     let headMesh = null;
     let headMaterial = null;
     let wireOverlay = null;
     let holoRim = null;
+    let screenFrame = null;
     let roboEyes = [];
     let eyeRings = [];
     let isRotating = false;
     let wireframeMode = false;
     let themeIndex = 0;
     let jumpTime = 0;
-    let lookTarget = { x: 0, y: 0 };
     let dragging = false;
+    let screenSize = { width: DISPLAY.screenWidth, height: DISPLAY.screenWidth * 0.5625 };
 
-    const JUMP_SPEED = 0.02;
-    const JUMP_DEPTH = 0.07;
+    let eyePos = { x: 0, y: 0, z: DISPLAY.eyeZ };
+    let eyeTarget = { x: 0, y: 0, z: DISPLAY.eyeZ };
+
+    let webcamActive = false;
+    let webcamVideo = null;
+    let webcamStream = null;
+    let faceDetector = null;
+    let webcamLoopId = null;
 
     function theme() { return THEMES[themeIndex]; }
 
     function tag(obj, role) {
         obj.userData.role = role;
         return obj;
+    }
+
+    function screenHeightForAspect(aspect) {
+        return DISPLAY.screenWidth / aspect;
+    }
+
+    function updateScreenSize() {
+        if (!canvasContainer) return;
+        const aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+        screenSize.height = screenHeightForAspect(aspect);
+        if (screenFrame) {
+            screenFrame.geometry.dispose();
+            screenFrame.geometry = new THREE.PlaneGeometry(screenSize.width, screenSize.height);
+        }
+    }
+
+    /**
+     * Off-axis (anamorphic) projection — frustum passes through viewer eye and screen edges.
+     * See head-coupled perspective / forced-perspective display techniques.
+     */
+    function applyForcedPerspective(cam, eye, sw, sh) {
+        const near = cam.near;
+        const far = cam.far;
+        const ez = Math.max(eye.z, near + 0.02);
+
+        const left = (-sw / 2 - eye.x) * near / ez;
+        const right = (sw / 2 - eye.x) * near / ez;
+        const bottom = (-sh / 2 - eye.y) * near / ez;
+        const top = (sh / 2 - eye.y) * near / ez;
+
+        cam.position.set(eye.x, eye.y, eye.z);
+        cam.up.set(0, 1, 0);
+        cam.lookAt(eye.x, eye.y, 0);
+        cam.updateMatrixWorld(true);
+
+        cam.projectionMatrix.makePerspective(left, right, top, bottom, near, far);
+        cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+    }
+
+    function setEyeFromNormalized(nx, ny) {
+        eyeTarget.x = nx * DISPLAY.maxEyeX;
+        eyeTarget.y = ny * DISPLAY.maxEyeY;
+    }
+
+    function updateEyeFromPointer(clientX, clientY) {
+        if (webcamActive) return;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        setEyeFromNormalized(
+            (clientX / w - 0.5) * 2,
+            -((clientY / h - 0.5) * 2)
+        );
     }
 
     function androidHeadMaterial(original) {
@@ -109,8 +181,37 @@
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         model.position.sub(center);
-        model.scale.setScalar(2.15 / Math.max(...box.getSize(new THREE.Vector3()).toArray()));
+        model.scale.setScalar(0.24 / Math.max(...box.getSize(new THREE.Vector3()).toArray()));
         return new THREE.Box3().setFromObject(model);
+    }
+
+    function addScreenFrame() {
+        const edges = new THREE.EdgesGeometry(new THREE.PlaneGeometry(screenSize.width, screenSize.height));
+        screenFrame = tag(new THREE.LineSegments(
+            edges,
+            new THREE.LineBasicMaterial({
+                color: 0x00e8ff,
+                transparent: true,
+                opacity: 0.22,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+            })
+        ), 'screenFrame');
+        screenFrame.position.z = 0;
+        scene.add(screenFrame);
+
+        const glass = tag(new THREE.Mesh(
+            new THREE.PlaneGeometry(screenSize.width, screenSize.height),
+            new THREE.MeshBasicMaterial({
+                color: 0x88eeff,
+                transparent: true,
+                opacity: 0.018,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            })
+        ), 'screenGlass');
+        glass.position.z = 0.001;
+        scene.add(glass);
     }
 
     function addFuturisticEyes(parent, box) {
@@ -199,6 +300,8 @@
         const box = fitModel(model);
         group.add(model);
 
+        group.position.z = DISPLAY.holoDepth;
+
         model.traverse((child) => {
             if (child.isMesh && !headMesh) headMesh = child;
         });
@@ -264,9 +367,9 @@
         const c = new THREE.Color(theme().accent);
 
         for (let i = 0; i < count * 3; i += 3) {
-            positions[i] = (Math.random() - 0.5) * 4;
-            positions[i + 1] = (Math.random() - 0.5) * 4;
-            positions[i + 2] = (Math.random() - 0.5) * 2.5;
+            positions[i] = (Math.random() - 0.5) * 0.45;
+            positions[i + 1] = (Math.random() - 0.5) * 0.45;
+            positions[i + 2] = (Math.random() - 0.5) * 0.25 + DISPLAY.holoDepth * 0.5;
             colors[i] = c.r; colors[i + 1] = c.g; colors[i + 2] = c.b;
         }
 
@@ -274,7 +377,7 @@
         geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
         particleSystem = new THREE.Points(geo, new THREE.PointsMaterial({
-            size: 0.012,
+            size: 0.004,
             vertexColors: true,
             transparent: true,
             opacity: 0.35,
@@ -315,22 +418,117 @@
         if (wireOverlay) wireOverlay.visible = enabled;
     }
 
+    function setTrackingStatus(text) {
+        const el = document.getElementById('tracking-status');
+        if (el) el.textContent = text;
+    }
+
+    async function startWebcamTracking() {
+        if (webcamActive) {
+            stopWebcamTracking();
+            return;
+        }
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+            setTrackingStatus('Webcam unavailable — use mouse to move viewpoint');
+            return;
+        }
+
+        try {
+            webcamStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user', width: 320, height: 240 },
+                audio: false,
+            });
+        } catch (err) {
+            console.warn(err);
+            setTrackingStatus('Camera denied — mouse tracking active');
+            return;
+        }
+
+        webcamVideo = document.createElement('video');
+        webcamVideo.srcObject = webcamStream;
+        webcamVideo.playsInline = true;
+        webcamVideo.muted = true;
+        await webcamVideo.play();
+
+        if ('FaceDetector' in window) {
+            try {
+                faceDetector = new FaceDetector({ maxDetectedFaces: 1, fastMode: true });
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
+        webcamActive = true;
+        document.getElementById('track-btn')?.classList.add('active');
+        setTrackingStatus(faceDetector
+            ? 'Webcam head tracking — move your head'
+            : 'Webcam on (basic) — move your head; best in Chrome/Edge');
+
+        webcamLoopId = setInterval(trackFaceFromWebcam, 66);
+    }
+
+    function stopWebcamTracking() {
+        webcamActive = false;
+        if (webcamLoopId) {
+            clearInterval(webcamLoopId);
+            webcamLoopId = null;
+        }
+        if (webcamStream) {
+            webcamStream.getTracks().forEach((t) => t.stop());
+            webcamStream = null;
+        }
+        webcamVideo = null;
+        faceDetector = null;
+        document.getElementById('track-btn')?.classList.remove('active');
+        setTrackingStatus('Mouse forced-perspective — move cursor to shift viewpoint');
+        eyeTarget.x = 0;
+        eyeTarget.y = 0;
+    }
+
+    async function trackFaceFromWebcam() {
+        if (!webcamActive || !webcamVideo) return;
+
+        const vw = webcamVideo.videoWidth;
+        const vh = webcamVideo.videoHeight;
+        if (!vw || !vh) return;
+
+        if (faceDetector) {
+            try {
+                const faces = await faceDetector.detect(webcamVideo);
+                if (faces.length > 0) {
+                    const box = faces[0].boundingBox;
+                    const cx = (box.x + box.width * 0.5) / vw;
+                    const cy = (box.y + box.height * 0.5) / vh;
+                    setEyeFromNormalized((0.5 - cx) * 2.2, (cy - 0.5) * 2.2);
+                    return;
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
+        // Fallback: centre-weighted motion proxy when FaceDetector is missing
+        setEyeFromNormalized(0, 0);
+    }
+
     async function init() {
-        const container = document.getElementById('canvas-container');
-        if (!container || typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
+        canvasContainer = document.getElementById('canvas-container');
+        if (!canvasContainer || typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
             setLoading('Failed to load Three.js or GLTFLoader.');
             return;
         }
 
-        const width = container.clientWidth || window.innerWidth;
-        const height = container.clientHeight || window.innerHeight;
+        const width = canvasContainer.clientWidth || window.innerWidth;
+        const height = canvasContainer.clientHeight || window.innerHeight;
+        updateScreenSize();
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x010108);
-        scene.fog = new THREE.FogExp2(0x010108, 0.045);
+        scene.fog = new THREE.FogExp2(0x010108, 1.8);
 
-        camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-        camera.position.set(0, 0, 3.75);
+        camera = new THREE.PerspectiveCamera(40, width / height, 0.008, 12);
+        applyForcedPerspective(camera, eyePos, screenSize.width, screenSize.height);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(width, height);
@@ -338,7 +536,9 @@
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.35;
-        container.appendChild(renderer.domElement);
+        canvasContainer.appendChild(renderer.domElement);
+
+        addScreenFrame();
 
         try {
             faceGroup = await createHumanoidFace();
@@ -354,26 +554,28 @@
 
         const t = theme();
         const key = new THREE.DirectionalLight(0xcceeff, 0.55);
-        key.position.set(1, 2, 4);
+        key.position.set(0.15, 0.35, 0.6);
         scene.add(key);
 
         const rim = new THREE.DirectionalLight(t.glow, 0.45);
-        rim.position.set(-2, 0, -3);
+        rim.position.set(-0.25, 0, -0.35);
         scene.add(rim);
 
-        const fill = new THREE.PointLight(t.accent, 0.65, 18);
-        fill.position.set(-1.5, 0.5, 2.5);
+        const fill = new THREE.PointLight(t.accent, 0.65, 3);
+        fill.position.set(-0.2, 0.08, 0.35);
         fill.name = 'fillLight';
         scene.add(fill);
 
-        const glow = new THREE.PointLight(t.glow, 0.5, 12);
-        glow.position.set(0, 0.3, 1);
+        const glow = new THREE.PointLight(t.glow, 0.5, 2);
+        glow.position.set(0, 0.05, 0.2);
         glow.name = 'glowLight';
         scene.add(glow);
 
         addParticles();
         setupControls(renderer.domElement);
         window.addEventListener('resize', onResize);
+        window.addEventListener('mousemove', (e) => updateEyeFromPointer(e.clientX, e.clientY));
+        window.addEventListener('deviceorientation', onDeviceOrientation, true);
 
         document.getElementById('rotate-btn')?.addEventListener('click', () => { isRotating = !isRotating; });
         document.getElementById('wireframe-btn')?.addEventListener('click', () => {
@@ -389,21 +591,39 @@
                 if (ch instanceof THREE.PointLight && ch.name === 'glowLight') ch.color.setHex(th.glow);
             });
         });
+        document.getElementById('track-btn')?.addEventListener('click', () => {
+            if (webcamActive) stopWebcamTracking();
+            else startWebcamTracking();
+        });
         document.getElementById('reset-btn')?.addEventListener('click', () => {
             if (faceGroup) faceGroup.rotation.set(0, 0, 0);
-            camera.position.set(0, 0, 3.75);
-            lookTarget = { x: 0, y: 0 };
+            eyeTarget = { x: 0, y: 0, z: DISPLAY.eyeZ };
+            eyePos = { ...eyeTarget };
+            if (webcamActive) stopWebcamTracking();
         });
 
+        setTrackingStatus('Forced-perspective display — move mouse to shift viewpoint');
         animate();
+    }
+
+    function onDeviceOrientation(e) {
+        if (webcamActive || dragging) return;
+        if (e.beta == null || e.gamma == null) return;
+        setEyeFromNormalized(
+            THREE.MathUtils.clamp(e.gamma / 25, -1, 1),
+            THREE.MathUtils.clamp((e.beta - 45) / 35, -1, 1)
+        );
     }
 
     function setupControls(canvas) {
         let prev = { x: 0, y: 0 };
-        canvas.addEventListener('mousedown', (e) => { dragging = true; prev = { x: e.clientX, y: e.clientY }; });
+
+        canvas.addEventListener('mousedown', (e) => {
+            dragging = true;
+            prev = { x: e.clientX, y: e.clientY };
+        });
         canvas.addEventListener('mousemove', (e) => {
-            lookTarget.x = (e.clientX / window.innerWidth - 0.5) * 0.14;
-            lookTarget.y = -(e.clientY / window.innerHeight - 0.5) * 0.1;
+            updateEyeFromPointer(e.clientX, e.clientY);
             if (dragging && faceGroup) {
                 faceGroup.rotation.y += (e.clientX - prev.x) * 0.006;
                 faceGroup.rotation.x += (e.clientY - prev.y) * 0.006;
@@ -414,41 +634,72 @@
         canvas.addEventListener('mouseleave', () => { dragging = false; });
         canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
-            camera.position.z = Math.max(2.4, Math.min(6, camera.position.z + e.deltaY * 0.004));
+            eyeTarget.z = Math.max(
+                DISPLAY.eyeZMin,
+                Math.min(DISPLAY.eyeZMax, eyeTarget.z + e.deltaY * 0.00025)
+            );
         }, { passive: false });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                dragging = true;
+                prev = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                updateEyeFromPointer(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                updateEyeFromPointer(e.touches[0].clientX, e.touches[0].clientY);
+                if (dragging && faceGroup) {
+                    faceGroup.rotation.y += (e.touches[0].clientX - prev.x) * 0.006;
+                    faceGroup.rotation.x += (e.touches[0].clientY - prev.y) * 0.006;
+                    prev = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            }
+        }, { passive: true });
+        canvas.addEventListener('touchend', () => { dragging = false; });
     }
 
     function onResize() {
-        const container = document.getElementById('canvas-container');
-        if (!container || !camera || !renderer) return;
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        if (!canvasContainer || !camera || !renderer) return;
+        updateScreenSize();
+        renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+    }
+
+    function updateEyeGaze() {
+        const gazeX = THREE.MathUtils.clamp(eyePos.x / DISPLAY.eyeZ, -0.35, 0.35) * 0.012;
+        const gazeY = THREE.MathUtils.clamp(eyePos.y / DISPLAY.eyeZ, -0.35, 0.35) * 0.009;
+        roboEyes.forEach((pupil, i) => {
+            pupil.position.x = gazeX;
+            pupil.position.y = gazeY;
+            pupil.material.opacity = 0.8 + 0.2 * Math.sin(jumpTime * 2 + i);
+        });
     }
 
     function animate() {
         requestAnimationFrame(animate);
         if (!renderer || !scene || !camera || !faceGroup) return;
 
-        jumpTime += JUMP_SPEED;
-        faceGroup.position.z = JUMP_DEPTH * Math.sin(jumpTime) * Math.sin(jumpTime);
+        jumpTime += 0.02;
+
+        eyePos.x += (eyeTarget.x - eyePos.x) * DISPLAY.smooth;
+        eyePos.y += (eyeTarget.y - eyePos.y) * DISPLAY.smooth;
+        eyePos.z += (eyeTarget.z - eyePos.z) * DISPLAY.smooth;
+
+        applyForcedPerspective(camera, eyePos, screenSize.width, screenSize.height);
+
+        const breathe = 0.004 * Math.sin(jumpTime * 0.9);
+        faceGroup.position.z = DISPLAY.holoDepth + breathe;
 
         if (isRotating) {
             faceGroup.rotation.y += 0.003;
-        } else if (!dragging) {
-            faceGroup.rotation.y += (lookTarget.x - faceGroup.rotation.y) * 0.045;
-            faceGroup.rotation.x += (lookTarget.y - faceGroup.rotation.x) * 0.045;
         }
 
         if (headMaterial?.userData.shader) {
             headMaterial.userData.shader.uniforms.uTime.value = jumpTime;
         }
 
-        roboEyes.forEach((pupil, i) => {
-            pupil.position.x = lookTarget.x * 0.01;
-            pupil.position.y = lookTarget.y * 0.007;
-            pupil.material.opacity = 0.8 + 0.2 * Math.sin(jumpTime * 2 + i);
-        });
+        updateEyeGaze();
 
         eyeRings.forEach((ring, i) => {
             ring.material.opacity = 0.65 + 0.25 * Math.sin(jumpTime * 1.6 + i * 0.5);

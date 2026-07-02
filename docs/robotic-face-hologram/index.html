@@ -40,7 +40,14 @@
         .hint {
             font-size: 0.9rem;
             opacity: 0.6;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tracking-status {
+            font-size: 0.85rem;
+            color: rgba(0, 232, 255, 0.75);
+            margin-bottom: 1.25rem;
+            min-height: 1.2em;
         }
 
         #hologram-container {
@@ -117,6 +124,12 @@
             box-shadow: 0 0 12px rgba(0, 255, 255, 0.3);
         }
 
+        button.active {
+            background: rgba(255, 0, 255, 0.2);
+            border-color: rgba(255, 0, 255, 0.55);
+            color: #ff88ff;
+        }
+
         .info {
             text-align: left;
             background: rgba(255, 255, 255, 0.04);
@@ -154,8 +167,9 @@
 <body>
     <div class="container">
         <h1>Robotic Face Hologram</h1>
-        <p class="subtitle">Scanned head — dark chrome android with holographic rim glow</p>
-        <p class="hint">Move your mouse — the face tracks you and pops ~7 cm out of the screen. Toggle Wireframe for mesh view.</p>
+        <p class="subtitle">Forced-perspective hologram — face floats ~8 cm in front of the screen plane</p>
+        <p class="hint">Move your mouse to shift viewpoint (anamorphic / head-coupled perspective). Scroll to move closer. Drag on the face to orbit.</p>
+        <p id="tracking-status" class="tracking-status">Loading…</p>
 
         <div id="hologram-container">
             <div id="loading-status">Loading 3D head model…</div>
@@ -163,6 +177,7 @@
         </div>
 
         <div class="controls">
+            <button id="track-btn">Track with Webcam</button>
             <button id="rotate-btn">Toggle Rotation</button>
             <button id="wireframe-btn">Toggle Wireframe</button>
             <button id="color-btn">Change Color</button>
@@ -172,14 +187,15 @@
         <div class="info">
             <h2>About this demo</h2>
             <p>
-                A photorealistic head scan rendered as a futuristic android hologram —
-                dark chrome, cyan/magenta rim glow, and soft scan bands baked into the shader.
+                Uses <strong>forced-perspective (anamorphic) display</strong>: the canvas is treated as a
+                physical screen window. The camera projection is warped to match your eye position, so the
+                android head appears to float in real space ~8 cm in front of the glass.
             </p>
             <ul>
-                <li>Dark chrome android — not human skin tones</li>
-                <li>Refined ring eyes with cursor tracking</li>
-                <li>Holographic fresnel rim + animated scan shader</li>
-                <li>Wireframe mode optional (Toggle Wireframe button)</li>
+                <li>Off-axis projection — head-coupled perspective rendering</li>
+                <li>Mouse or webcam head tracking shifts the viewpoint</li>
+                <li>Dark chrome android with holographic fresnel rim shader</li>
+                <li>Cyan screen-frame marks the display plane (z = 0)</li>
             </ul>
             <a class="back-link" href="../index.html">← Back to main Hologram Lab demo</a>
         </div>
@@ -187,6 +203,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="face-hologram.js?v=10"></script>
+    <script src="face-hologram.js?v=11"></script>
 </body>
 </html>
