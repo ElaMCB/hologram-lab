@@ -168,7 +168,7 @@
     <div class="container">
         <h1>Robotic Face Hologram</h1>
         <p class="subtitle">Forced-perspective hologram — face floats ~8 cm in front of the screen plane</p>
-        <p class="hint">Move your mouse to shift viewpoint (anamorphic / head-coupled perspective). Scroll to move closer. Drag on the face to orbit.</p>
+        <p class="hint">Move your mouse to shift viewpoint. Wireframe mesh is on by default — toggle for solid chrome. Drag to orbit.</p>
         <p id="tracking-status" class="tracking-status">Loading…</p>
 
         <div id="hologram-container">
@@ -179,7 +179,7 @@
         <div class="controls">
             <button id="track-btn">Track with Webcam</button>
             <button id="rotate-btn">Toggle Rotation</button>
-            <button id="wireframe-btn">Toggle Wireframe</button>
+            <button id="wireframe-btn">Toggle Solid</button>
             <button id="color-btn">Change Color</button>
             <button id="reset-btn">Reset View</button>
         </div>
@@ -192,9 +192,9 @@
                 android head appears to float in real space ~8 cm in front of the glass.
             </p>
             <ul>
-                <li>Off-axis projection — head-coupled perspective rendering</li>
-                <li>Mouse or webcam head tracking shifts the viewpoint</li>
-                <li>Dark chrome android with holographic fresnel rim shader</li>
+                <li>Wireframe mesh on by default — robotic scan look</li>
+                <li>Off-axis forced-perspective projection</li>
+                <li>Mouse or webcam head tracking</li>
                 <li>Cyan screen-frame marks the display plane (z = 0)</li>
             </ul>
             <a class="back-link" href="../index.html">← Back to main Hologram Lab demo</a>
@@ -203,6 +203,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="face-hologram.js?v=11"></script>
+    <script src="face-hologram.js?v=12"></script>
 </body>
 </html>

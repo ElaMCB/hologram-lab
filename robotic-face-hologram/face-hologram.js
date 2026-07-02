@@ -31,12 +31,10 @@
     let headMesh = null;
     let headMaterial = null;
     let wireOverlay = null;
-    let holoRim = null;
     let screenFrame = null;
     let roboEyes = [];
-    let eyeRings = [];
     let isRotating = false;
-    let wireframeMode = false;
+    let wireframeMode = true;
     let themeIndex = 0;
     let jumpTime = 0;
     let dragging = false;
@@ -118,7 +116,7 @@
             roughness: 0.06,
             emissive: t.accent,
             emissiveIntensity: 0.08,
-            wireframe: wireframeMode,
+            wireframe: false,
         });
 
         if (original?.normalMap) {
@@ -223,28 +221,13 @@
         const t = theme();
 
         roboEyes = [];
-        eyeRings = [];
 
         [-1, 1].forEach((side) => {
             const eye = new THREE.Group();
             eye.position.set(cx + side * size.x * 0.19, cy + size.y * 0.06, cz + s * 0.01);
 
-            const ring = tag(new THREE.Mesh(
-                new THREE.RingGeometry(s * 0.022, s * 0.038, 48),
-                new THREE.MeshBasicMaterial({
-                    color: t.glow,
-                    transparent: true,
-                    opacity: 0.85,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false,
-                    side: THREE.DoubleSide,
-                })
-            ), 'eyeRing');
-            eye.add(ring);
-            eyeRings.push(ring);
-
             const inner = tag(new THREE.Mesh(
-                new THREE.CircleGeometry(s * 0.018, 32),
+                new THREE.CircleGeometry(s * 0.016, 32),
                 new THREE.MeshBasicMaterial({
                     color: t.accent,
                     transparent: true,
@@ -257,41 +240,12 @@
             eye.add(inner);
             roboEyes.push(inner);
 
-            const highlight = new THREE.Mesh(
-                new THREE.CircleGeometry(s * 0.005, 16),
-                new THREE.MeshBasicMaterial({
-                    color: 0xffffff,
-                    transparent: true,
-                    opacity: 0.7,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false,
-                })
-            );
-            highlight.position.set(side * -s * 0.006, s * 0.005, 0.003);
-            eye.add(highlight);
-
             parent.add(eye);
         });
     }
 
-    function addHoloRim(parent, radius) {
-        holoRim = tag(new THREE.Mesh(
-            new THREE.SphereGeometry(radius * 1.02, 48, 48),
-            new THREE.MeshBasicMaterial({
-                color: theme().glow,
-                transparent: true,
-                opacity: 0.025,
-                side: THREE.BackSide,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-            })
-        ), 'shell');
-        parent.add(holoRim);
-    }
-
     function buildFaceFromModel(gltf) {
         roboEyes = [];
-        eyeRings = [];
 
         const group = new THREE.Group();
         const model = gltf.scene;
@@ -308,8 +262,6 @@
 
         addFuturisticEyes(group, box);
 
-        const radius = Math.max(...box.getSize(new THREE.Vector3()).toArray()) * 0.55;
-
         if (headMesh) {
             wireOverlay = tag(new THREE.Mesh(
                 headMesh.geometry,
@@ -317,16 +269,15 @@
                     color: theme().accent,
                     wireframe: true,
                     transparent: true,
-                    opacity: 0.04,
+                    opacity: 0.16,
                     blending: THREE.AdditiveBlending,
                     depthWrite: false,
                 })
             ), 'wireOverlay');
-            wireOverlay.visible = false;
+            wireOverlay.visible = wireframeMode;
             headMesh.parent.add(wireOverlay);
         }
 
-        addHoloRim(group, radius);
         return group;
     }
 
@@ -400,8 +351,6 @@
             }
         }
         roboEyes.forEach((p) => p.material.color.setHex(t.accent));
-        eyeRings.forEach((r) => r.material.color.setHex(t.glow));
-        if (holoRim) holoRim.material.color.setHex(t.glow);
         if (wireOverlay) wireOverlay.material.color.setHex(t.accent);
         if (particleSystem) {
             const c = new THREE.Color(t.accent);
@@ -414,7 +363,12 @@
     }
 
     function setWireframe(enabled) {
-        if (headMaterial) headMaterial.wireframe = enabled;
+        wireframeMode = enabled;
+        if (headMaterial) {
+            headMaterial.wireframe = false;
+            headMaterial.opacity = enabled ? 0.35 : 1;
+            headMaterial.transparent = enabled;
+        }
         if (wireOverlay) wireOverlay.visible = enabled;
     }
 
@@ -572,10 +526,11 @@
         scene.add(glow);
 
         addParticles();
+        setWireframe(true);
         setupControls(renderer.domElement);
         window.addEventListener('resize', onResize);
         window.addEventListener('mousemove', (e) => updateEyeFromPointer(e.clientX, e.clientY));
-        window.addEventListener('deviceorientation', onDeviceOrientation);
+        window.addEventListener('deviceorientation', onDeviceOrientation, true);
 
         document.getElementById('rotate-btn')?.addEventListener('click', () => { isRotating = !isRotating; });
         document.getElementById('wireframe-btn')?.addEventListener('click', () => {
@@ -617,8 +572,29 @@
 
     function setupControls(canvas) {
         let prev = { x: 0, y: 0 };
-        canvas.addEventListener('mousedown', (e) => { dragging = true; prev = { x: e.clientX, y: e.clientY }; });
-        canvas.addEventListener('mousemove', (e) => updateEyeFromPointer(e.clientX, e.clientY));
+
+        canvas.addEventListener('mousedown', (e) => {
+            dragging = true;
+            prev = { x: e.clientX, y: e.clientY };
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            updateEyeFromPointer(e.clientX, e.clientY);
+            if (dragging && faceGroup) {
+                faceGroup.rotation.y += (e.clientX - prev.x) * 0.006;
+                faceGroup.rotation.x += (e.clientY - prev.y) * 0.006;
+                prev = { x: e.clientX, y: e.clientY };
+            }
+        });
+        canvas.addEventListener('mouseup', () => { dragging = false; });
+        canvas.addEventListener('mouseleave', () => { dragging = false; });
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            eyeTarget.z = Math.max(
+                DISPLAY.eyeZMin,
+                Math.min(DISPLAY.eyeZMax, eyeTarget.z + e.deltaY * 0.00025)
+            );
+        }, { passive: false });
+
         canvas.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 dragging = true;
@@ -637,22 +613,6 @@
             }
         }, { passive: true });
         canvas.addEventListener('touchend', () => { dragging = false; });
-        canvas.addEventListener('mousemove', (e) => {
-            if (dragging && faceGroup) {
-                faceGroup.rotation.y += (e.clientX - prev.x) * 0.006;
-                faceGroup.rotation.x += (e.clientY - prev.y) * 0.006;
-                prev = { x: e.clientX, y: e.clientY };
-            }
-        });
-        canvas.addEventListener('mouseup', () => { dragging = false; });
-        canvas.addEventListener('mouseleave', () => { dragging = false; });
-        canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            eyeTarget.z = Math.max(
-                DISPLAY.eyeZMin,
-                Math.min(DISPLAY.eyeZMax, eyeTarget.z + e.deltaY * 0.00025)
-            );
-        }, { passive: false });
     }
 
     function onResize() {
@@ -695,15 +655,6 @@
         }
 
         updateEyeGaze();
-
-        eyeRings.forEach((ring, i) => {
-            ring.material.opacity = 0.65 + 0.25 * Math.sin(jumpTime * 1.6 + i * 0.5);
-            ring.scale.setScalar(0.98 + 0.04 * Math.sin(jumpTime * 2.2 + i));
-        });
-
-        if (holoRim) {
-            holoRim.material.opacity = 0.018 + 0.012 * Math.sin(jumpTime * 0.9);
-        }
 
         if (headMaterial) {
             headMaterial.emissiveIntensity = 0.06 + 0.04 * Math.sin(jumpTime * 1.2);
