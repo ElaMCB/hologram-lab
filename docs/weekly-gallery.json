@@ -2,6 +2,10 @@
   "repo": "ElaMCB/hologram-lab",
   "items": [
     {
+      "file": "demos/weekly-hologram-20260914.gif",
+      "date": "2026-09-14"
+    },
+    {
       "file": "demos/weekly-hologram-20260907.gif",
       "date": "2026-09-07"
     },
@@ -12,10 +16,6 @@
     {
       "file": "demos/weekly-hologram-20260824.gif",
       "date": "2026-08-24"
-    },
-    {
-      "file": "demos/weekly-hologram-20260817.gif",
-      "date": "2026-08-17"
     }
   ]
 }
