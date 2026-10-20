@@ -38,7 +38,7 @@ This repository provides everything you need to learn about holography—from cr
 
 | Folder | What you'll get |
 |--------|----------------|
-| `real-holograms` | DIY LitiHolo kit tutorials, MIT course notes, INTEGRAF pro guides |
+| `real-holograms` | Physical holography overview with links to LitiHolo instructions, MIT course materials, and INTEGRAF guides |
 | `simulations` | Fresnel / Fourier / Kinoform CGH notebooks + JackHCC fork |
 | `github-page-hologram` | WebGL Pepper's-ghost illusion that works on mobile |
 | `robotic-face-hologram` | Chrome android head scan with holographic shader |
@@ -100,10 +100,10 @@ git submodule update --init --recursive
 
 ## Getting Started with Real Holograms
 
-Start with the beginner-friendly guides in `/real-holograms`:
-1. **LitiHolo Kit Tutorial** - No chemicals needed, perfect for beginners
-2. **MIT Holography Course** - Comprehensive theoretical foundation
-3. **INTEGRAF Guides** - Professional techniques for reflection and transmission holograms
+Start with the [physical holography overview](real-holograms/README.md) and its linked resources:
+1. **LitiHolo Kits** - Self-developing photopolymer plates with no separate wet processing
+2. **MIT MAS.450 Holographic Imaging** - External course materials for theory and laboratory study
+3. **INTEGRAF Guides** - Manufacturer instructions for reflection and transmission holograms
 
 ## Computer-Generated Holograms
 
