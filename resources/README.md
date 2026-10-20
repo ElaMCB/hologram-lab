@@ -77,7 +77,7 @@ A curated collection of books, papers, software tools, and hardware resources fo
 
 | Name | Level | Description | Website | Recommended Product |
 |------|-------|-------------|---------|---------------------|
-| LitiHolo Kits | Beginner | Self-developing hologram kits, no chemicals required | [www.litiholo.com](https://www.litiholo.com) | C-RT20 Reflection Hologram Kit |
+| LitiHolo Kits | Beginner | Self-developing photopolymer kits; no separate wet processing | [Hologram Kits](https://www.litiholo.com/hologram-kits.html) | Base Hologram Kit; add the [Reflection Hologram Upgrade](https://www.litiholo.com/hologram-upgrade-kits.html) for white-light viewing (requires the base kit) |
 | INTEGRAF Kits | Intermediate | Professional holography supplies and educational kits | [www.integraf.com](https://www.integraf.com) | Various educational kits |
 
 ### Lasers
@@ -116,7 +116,7 @@ A curated collection of books, papers, software tools, and hardware resources fo
 
 | Resource | Level | Type | Description | Link |
 |----------|-------|------|-------------|------|
-| MIT OpenCourseWare | Intermediate | Free courses | Search for "Holography" courses with lecture notes | ocw.mit.edu |
+| MIT OpenCourseWare | Intermediate | Free course materials | MAS.450 Holographic Imaging (Spring 2003): readings, labs, and assignments | [Course](https://ocw.mit.edu/courses/mas-450-holographic-imaging-spring-2003/) |
 | EdX / Coursera | Beginner-Intermediate | Online courses | Optics and photonics courses with holography modules | edx.org, coursera.org |
 | INTEGRAF Tutorials | Beginner | Video tutorials | Step-by-step guides and video tutorials | [integraf.com/tutorials](https://www.integraf.com/tutorials) |
 | Instructables | Beginner | DIY guides | Community guides and interactive hologram tutorials | instructables.com |
